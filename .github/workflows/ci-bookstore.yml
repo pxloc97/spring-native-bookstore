@@ -6,4 +6,4 @@ on:
 
 jobs:
   catalog-service-build:
-    uses: ./catalog-service/.github/workflows/ci-pipeline.yml
+    uses: ./.github/workflows/ci-catalog-pipeline.yml
