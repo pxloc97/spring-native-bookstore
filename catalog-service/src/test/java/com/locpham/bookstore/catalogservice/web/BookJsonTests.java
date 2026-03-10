@@ -24,7 +24,8 @@ class BookJsonTests {
 
     @Test
     void testDeserialize() throws Exception {
-        var content = """
+        var content =
+                """
             {
                 "isbn": "1234567890",
                 "title": "Title",
