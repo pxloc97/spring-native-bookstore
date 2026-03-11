@@ -1,0 +1,17 @@
+server:
+  port: 8888
+  tomcat:
+    connection-timeout: 2s
+    threads:
+      max: 50
+      min-spare: 5
+
+spring:
+  application:
+    name: config-service
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/prophet509/spring-native-bookstore/tree/main/config-service/config
+          default-label: main
