@@ -1,9 +1,12 @@
-name: Bookstore Pipeline
-on: 
+name: CD Pipeline
+on:
   push:
-    paths:
-      - 'catalog-service/**'
+    branches: [main]
 
 jobs:
+  config-service-build:
+    uses: ./.github/workflows/ci-config-pipeline.yml
+
   catalog-service-build:
     uses: ./.github/workflows/ci-catalog-pipeline.yml
+

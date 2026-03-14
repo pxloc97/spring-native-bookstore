@@ -1,0 +1,31 @@
+services:
+  config-service:
+    image: "pxloc97/config-service:0.0.1-SNAPSHOT"
+    container_name: "config-service"
+    ports:
+      - 8888:8888
+
+  polar-postgres-catalog:
+    image: "postgres:13.4"
+    container_name: "polar-postgres-catalog"
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=polardb_catalog
+  catalog-service:
+    depends_on:
+      - config-service
+      - polar-postgres-catalog
+    image: "pxloc97/catalog-service:0.0.1-SNAPSHOT"
+    container_name: "catalog-service"
+    ports:
+      - 8001:8001
+      - 9001:9001
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8001
+      - BPL_JVM_THREAD_COUNT=50
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres-catalog:5432/polardb_catalog

@@ -1,4 +1,4 @@
-name: Catalog CI Pipeline
+name: Config CI Pipeline
 on:
   workflow_call:
 
@@ -8,16 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: catalog-service
+        working-directory: config-service
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: gradle
+
       - name: Compile and test application
         run: |
           chmod +x gradlew
@@ -29,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: catalog-service
+        working-directory: config-service
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -27,7 +27,8 @@ public record Book(
         @LastModifiedDate Instant lastModifiedDate,
         @Version Integer version) {
 
-    public static Book build(String isbn, String title, String author, Double price, String publisher) {
+    public static Book build(
+            String isbn, String title, String author, Double price, String publisher) {
         return new Book(null, isbn, title, author, price, publisher, null, null, null);
     }
 }

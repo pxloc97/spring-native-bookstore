@@ -1,21 +1,18 @@
 package com.locpham.bookstore.catalogservice.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jdbc.core.JdbcAggregateTemplate;
-import org.springframework.test.context.ActiveProfiles;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 class BookRepositoryJdbcTests {
 
-    @Autowired
-    private BookRepository bookRepository;
+    @Autowired private BookRepository bookRepository;
 
-    @Autowired
-    private JdbcAggregateTemplate jdbcAggregateTemplate;
+    @Autowired private JdbcAggregateTemplate jdbcAggregateTemplate;
 
     @Test
     void findBookByIsbnWhenExisting() {
@@ -26,8 +23,6 @@ class BookRepositoryJdbcTests {
         var actualBook = bookRepository.findByIsbn(bookIsbn);
 
         assertThat(actualBook).isPresent();
-        assertThat(actualBook.get())
-                .usingRecursiveComparison()
-                .isEqualTo(expectedBook);
+        assertThat(actualBook.get()).usingRecursiveComparison().isEqualTo(expectedBook);
     }
 }
