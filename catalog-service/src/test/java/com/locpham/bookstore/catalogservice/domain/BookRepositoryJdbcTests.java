@@ -23,6 +23,11 @@ class BookRepositoryJdbcTests {
         var actualBook = bookRepository.findByIsbn(bookIsbn);
 
         assertThat(actualBook).isPresent();
-        assertThat(actualBook.get()).usingRecursiveComparison().isEqualTo(expectedBook);
+        assertThat(actualBook.get().createdDate()).isNotNull();
+        assertThat(actualBook.get().lastModifiedDate()).isNotNull();
+        assertThat(actualBook.get())
+                .usingRecursiveComparison()
+                .ignoringFields("createdDate", "lastModifiedDate")
+                .isEqualTo(expectedBook);
     }
 }
