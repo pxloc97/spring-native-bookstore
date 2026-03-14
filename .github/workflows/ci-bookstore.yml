@@ -6,7 +6,9 @@ on:
 jobs:
   config-service-build:
     uses: ./.github/workflows/ci-config-pipeline.yml
+    secrets: inherit
 
   catalog-service-build:
     uses: ./.github/workflows/ci-catalog-pipeline.yml
+    secrets: inherit
 
