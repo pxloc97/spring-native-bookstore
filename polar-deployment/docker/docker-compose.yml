@@ -14,6 +14,7 @@ services:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=polardb_catalog
+
   catalog-service:
     depends_on:
       - config-service
@@ -29,3 +30,13 @@ services:
       - BPL_JVM_THREAD_COUNT=50
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres-catalog:5432/polardb_catalog
+
+  polar-postgres-order:
+    image: "postgres:13.4"
+    container_name: "polar-postgres-order"
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=polardb_order
