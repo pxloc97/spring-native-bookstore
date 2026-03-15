@@ -1,6 +1,17 @@
+server:
+  port: 9001
+  tomcat:
+    connection-timeout: 2s
+    threads:
+      max: 50
+      min-spare: 5
+  shutdown: graceful
+
 spring:
   application:
     name: catalog-service
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
   config:
     import: "optional:configserver:"
   cloud:
@@ -24,14 +35,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-
-server:
-  port: 9001
-  tomcat:
-    connection-timeout: 2s
-    threads:
-      max: 50
-      min-spare: 5
 
 management:
   endpoints:

@@ -1,0 +1,19 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: catalog-service
+build:
+  artifacts:
+    - image: pxloc97/catalog-service
+      buildpacks:
+        trustBuilder: true
+        builder: paketobuildpacks/builder-jammy-base
+        env:
+          - BP_JVM_VERSION=21.*
+          - CNB_USER_ID=0
+          - CNB_GROUP_ID=0
+          - CNB_LAYERS_DIR=/tmp/layers
+manifests:
+  rawYaml:
+    - k8s/deployment.yml
+    - k8s/service.yml
