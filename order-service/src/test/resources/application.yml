@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+
+polar:
+  catalog-service-url: http://localhost:9001
