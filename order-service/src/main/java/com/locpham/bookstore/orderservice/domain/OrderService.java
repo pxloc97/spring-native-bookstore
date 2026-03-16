@@ -11,7 +11,7 @@ public class OrderService {
     private final BookClient bookClient;
     private final OrderRepository orderRepository;
 
-    public OrderService(BookClient bookClient,OrderRepository orderRepository) {
+    public OrderService(BookClient bookClient, OrderRepository orderRepository) {
         this.bookClient = bookClient;
         this.orderRepository = orderRepository;
     }
@@ -21,10 +21,11 @@ public class OrderService {
     }
 
     public Mono<Order> submitOrder(String isbn, int quantity) {
-        return bookClient.getBookByIsbn(isbn)
-                        .map(book -> buildAcceptedOrder(book, quantity))
-                        .defaultIfEmpty(buildRejectedOrder(isbn, quantity))
-                        .flatMap(orderRepository::save);
+        return bookClient
+                .getBookByIsbn(isbn)
+                .map(book -> buildAcceptedOrder(book, quantity))
+                .defaultIfEmpty(buildRejectedOrder(isbn, quantity))
+                .flatMap(orderRepository::save);
     }
 
     public static Order buildRejectedOrder(String isbn, int quantity) {

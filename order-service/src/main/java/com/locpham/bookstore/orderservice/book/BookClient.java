@@ -1,8 +1,11 @@
 package com.locpham.bookstore.orderservice.book;
 
+import java.time.Duration;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 @Component
 public class BookClient {
@@ -18,7 +21,9 @@ public class BookClient {
                 .get()
                 .uri(BOOK_URL + isbn)
                 .retrieve()
-                .bodyToMono(Book.class);
+                .bodyToMono(Book.class)
+                .timeout(Duration.ofSeconds(2), Mono.empty())
+                .onErrorResume(WebClientResponseException.NotFound.class, exception -> Mono.empty())
+                .retryWhen(Retry.backoff(3, Duration.ofMillis(100)));
     }
-
 }

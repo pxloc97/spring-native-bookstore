@@ -12,3 +12,7 @@ jobs:
     uses: ./.github/workflows/ci-catalog-pipeline.yml
     secrets: inherit
 
+  order-service-build:
+    uses: ./.github/workflows/ci-order-pipeline.yml
+    secrets: inherit
+
