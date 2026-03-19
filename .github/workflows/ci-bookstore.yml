@@ -16,3 +16,6 @@ jobs:
     uses: ./.github/workflows/ci-order-pipeline.yml
     secrets: inherit
 
+  edge-service-build:
+    uses: ./.github/workflows/ci-edge-pipeline.yml
+    secrets: inherit

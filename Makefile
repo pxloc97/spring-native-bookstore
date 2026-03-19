@@ -1,110 +1,88 @@
 SHELL := /bin/bash
 
-COMPOSE_FILE := polar-deployment/docker/docker-compose.yml
-K8S_DIR := polar-deployment/kubernetes/local
-K8S_FILES := $(K8S_DIR)/postgresql.yml $(K8S_DIR)/postgresql-order.yml
-SKAFFOLD_FILE := skaffold.yml
+SERVICES := config catalog order edge
+SERVICE_DIR_config := config-service
+SERVICE_DIR_catalog := catalog-service
+SERVICE_DIR_order := order-service
+SERVICE_DIR_edge := edge-service
 
-.PHONY: help build test clean format lint \
-	build-config build-catalog build-order \
-	test-config test-catalog test-order \
-	clean-config clean-catalog clean-order \
-	run-config run-catalog run-order \
-	infra-up infra-down compose-up compose-down \
-	k8s-up k8s-down k8s-status \
+KIND_CLUSTER ?= bookstore
+KIND_CONFIG := polar-deployment/kubernetes/local/kind-config.yml
+KUBE_CONTEXT := kind-$(KIND_CLUSTER)
+K8S_PLATFORM_FILES := \
+	polar-deployment/kubernetes/local/postgresql.yml \
+	polar-deployment/kubernetes/local/postgresql-order.yml \
+	polar-deployment/kubernetes/local/redis.yml
+EDGE_K8S_FILES := edge-service/k8s/deployment.yml edge-service/k8s/service.yml edge-service/k8s/ingress.yml
+SKAFFOLD_FILE := skaffold.yml
+INGRESS_NGINX_VERSION := controller-v1.11.3
+INGRESS_NGINX_MANIFEST := https://raw.githubusercontent.com/kubernetes/ingress-nginx/$(INGRESS_NGINX_VERSION)/deploy/static/provider/kind/deploy.yaml
+
+.PHONY: help build test clean \
+	build-% test-% clean-% run-% \
+	platform-up platform-down edge-up edge-down k8s-status \
+	cluster-create cluster-delete ingress-install ingress-wait \
 	skaffold-dev skaffold-run skaffold-delete
 
 help: ## Show available targets
-	@awk 'BEGIN {FS = ":.*##"; printf "\nAvailable targets:\n"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nAvailable targets:\n"} /^[a-zA-Z0-9_.-%-]+:.*##/ {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: build-config build-catalog build-order ## Build all services
+build: $(addprefix build-,$(SERVICES)) ## Build all services
 
-test: test-config test-catalog test-order ## Test all services
+test: $(addprefix test-,$(SERVICES)) ## Test all services
 
-clean: clean-config clean-catalog clean-order ## Clean all services
+clean: $(addprefix clean-,$(SERVICES)) ## Clean all services
 
-format: ## Run Spotless auto-format (catalog + order)
-	cd catalog-service && ./gradlew spotlessApply
-	cd order-service && ./gradlew spotlessApply
+build-%: ## Build one service (config|catalog|order|edge)
+	cd $(SERVICE_DIR_$*) && ./gradlew clean build
 
-lint: ## Run Spotless checks (catalog + order)
-	cd catalog-service && ./gradlew spotlessCheck
-	cd order-service && ./gradlew spotlessCheck
+test-%: ## Test one service (config|catalog|order|edge)
+	cd $(SERVICE_DIR_$*) && ./gradlew test
 
-build-config: ## Build config-service
-	cd config-service && ./gradlew clean build
+clean-%: ## Clean one service (config|catalog|order|edge)
+	cd $(SERVICE_DIR_$*) && ./gradlew clean
 
-build-catalog: ## Build catalog-service
-	cd catalog-service && ./gradlew clean build
+run-%: ## Run one service locally (config|catalog|order|edge)
+	cd $(SERVICE_DIR_$*) && ./gradlew bootRun
 
-build-order: ## Build order-service
-	cd order-service && ./gradlew clean build
+cluster-create: ## Create kind cluster and install ingress-nginx
+	kind create cluster --name $(KIND_CLUSTER) --config $(KIND_CONFIG)
+	$(MAKE) ingress-install
 
-test-config: ## Run tests for config-service
-	cd config-service && ./gradlew test
+cluster-delete: ## Delete kind cluster
+	kind delete cluster --name $(KIND_CLUSTER)
 
-test-catalog: ## Run tests for catalog-service
-	cd catalog-service && ./gradlew test
+ingress-install: ## Install ingress-nginx in current cluster
+	kubectl apply --context $(KUBE_CONTEXT) -f $(INGRESS_NGINX_MANIFEST)
+	$(MAKE) ingress-wait
 
-test-order: ## Run tests for order-service
-	cd order-service && ./gradlew test
+ingress-wait: ## Wait for ingress-nginx controller to be ready
+	kubectl wait --context $(KUBE_CONTEXT) \
+		--namespace ingress-nginx \
+		--for=condition=ready pod \
+		--selector=app.kubernetes.io/component=controller \
+		--timeout=180s
 
-clean-config: ## Clean config-service outputs
-	cd config-service && ./gradlew clean
+platform-up: ## Apply local backing services (Postgres + Redis)
+	kubectl apply --context $(KUBE_CONTEXT) -f $(K8S_PLATFORM_FILES)
 
-clean-catalog: ## Clean catalog-service outputs
-	cd catalog-service && ./gradlew clean
+platform-down: ## Delete local backing services (Postgres + Redis)
+	kubectl delete --context $(KUBE_CONTEXT) -f $(K8S_PLATFORM_FILES)
 
-clean-order: ## Clean order-service outputs
-	cd order-service && ./gradlew clean
+edge-up: ## Apply edge-service Kubernetes manifests (Deployment/Service/Ingress)
+	kubectl apply --context $(KUBE_CONTEXT) -f $(EDGE_K8S_FILES)
 
-run-config: ## Run config-service locally
-	cd config-service && ./gradlew bootRun
+edge-down: ## Delete edge-service Kubernetes manifests
+	kubectl delete --context $(KUBE_CONTEXT) -f $(EDGE_K8S_FILES)
 
-run-catalog: ## Run catalog-service locally
-	cd catalog-service && ./gradlew bootRun
+k8s-status: ## Show deployments, services, ingress, and pods
+	kubectl get --context $(KUBE_CONTEXT) deployments,services,ingress,pods
 
-run-order: ## Run order-service locally
-	cd order-service && ./gradlew bootRun
+skaffold-dev: ## Run Skaffold dev against kind cluster
+	skaffold dev -f $(SKAFFOLD_FILE) -p kind
 
-infra-up: ## Start local PostgreSQL containers
-	docker compose -f $(COMPOSE_FILE) up -d polar-postgres-catalog polar-postgres-order
+skaffold-run: ## Run Skaffold once against kind cluster
+	skaffold run -f $(SKAFFOLD_FILE) -p kind
 
-infra-down: ## Stop local PostgreSQL containers
-	docker compose -f $(COMPOSE_FILE) stop polar-postgres-catalog polar-postgres-order
-
-compose-up: ## Start full Docker Compose stack
-	docker compose -f $(COMPOSE_FILE) up -d
-
-compose-down: ## Stop and remove Docker Compose stack
-	docker compose -f $(COMPOSE_FILE) down
-
-k8s-up: ## Apply local Kubernetes PostgreSQL manifests
-	kubectl apply -f $(K8S_FILES)
-
-k8s-down: ## Delete local Kubernetes PostgreSQL manifests
-	kubectl delete -f $(K8S_FILES)
-
-k8s-status: ## Show Kubernetes resources in current namespace
-	kubectl get deployments,services,pods
-
-skaffold-dev: ## Run Skaffold in dev mode (requires skaffold.yml)
-	@if [ ! -f $(SKAFFOLD_FILE) ]; then \
-		echo "Missing $(SKAFFOLD_FILE). Add it or set SKAFFOLD_FILE=<path>."; \
-		exit 1; \
-	fi
-	skaffold dev -f $(SKAFFOLD_FILE)
-
-skaffold-run: ## Run Skaffold once (build/deploy)
-	@if [ ! -f $(SKAFFOLD_FILE) ]; then \
-		echo "Missing $(SKAFFOLD_FILE). Add it or set SKAFFOLD_FILE=<path>."; \
-		exit 1; \
-	fi
-	skaffold run -f $(SKAFFOLD_FILE)
-
-skaffold-delete: ## Remove resources managed by Skaffold
-	@if [ ! -f $(SKAFFOLD_FILE) ]; then \
-		echo "Missing $(SKAFFOLD_FILE). Add it or set SKAFFOLD_FILE=<path>."; \
-		exit 1; \
-	fi
-	skaffold delete -f $(SKAFFOLD_FILE)
+skaffold-delete: ## Delete resources managed by Skaffold
+	skaffold delete -f $(SKAFFOLD_FILE) -p kind

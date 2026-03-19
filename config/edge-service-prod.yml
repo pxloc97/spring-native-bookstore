@@ -1,0 +1,27 @@
+spring:
+  data:
+    redis:
+      host: polar-redis
+      port: 6379
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: catalog-route
+              uri: http://catalog-service:9001
+              predicates:
+                - Path=/books,/books/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: catalogCircuitBreaker
+                    fallbackUri: forward:/catalog-fallback
+            - id: order-route
+              uri: http://order-service:9002
+              predicates:
+                - Path=/orders,/orders/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: orderCircuitBreaker
