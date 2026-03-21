@@ -19,3 +19,7 @@ jobs:
   edge-service-build:
     uses: ./.github/workflows/ci-edge-pipeline.yml
     secrets: inherit
+
+  dispatcher-service-build:
+    uses: ./.github/workflows/ci-dispatcher-pipeline.yml
+    secrets: inherit

@@ -62,7 +62,10 @@ dependencies {
     testImplementation 'org.testcontainers:r2dbc'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'org.springframework.cloud:spring-cloud-stream-binder-rabbit'
 
+    testImplementation("org.springframework.cloud:spring-cloud-stream")
+    testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 }
 

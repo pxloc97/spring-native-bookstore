@@ -189,7 +189,6 @@ curl http://localhost:8888/catalog-service/default
 - kind cluster config: `polar-deployment/kubernetes/local/kind-config.yml`
 - Local platform manifests: `polar-deployment/kubernetes/local/postgresql.yml`, `polar-deployment/kubernetes/local/postgresql-order.yml`, `polar-deployment/kubernetes/local/redis.yml`
 - Edge Kubernetes manifests (same layout as other services): `edge-service/k8s/deployment.yml`, `edge-service/k8s/service.yml`, `edge-service/k8s/ingress.yml`
-- Optional consolidated edge manifest: `polar-deployment/kubernetes/local/edge-service.yml`
 - Root Skaffold config: `skaffold.yml` (kind profile targets `kind-bookstore`)
 
 ## CI/CD

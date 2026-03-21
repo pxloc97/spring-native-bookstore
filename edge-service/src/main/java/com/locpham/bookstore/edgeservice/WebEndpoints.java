@@ -3,7 +3,6 @@ package com.locpham.bookstore.edgeservice;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.RouteMatcher;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -14,12 +13,13 @@ public class WebEndpoints {
 
     @Bean
     public RouterFunction<ServerResponse> routeFunction() {
-        return RouterFunctions.
-                route()
-                .GET("catalog-fallback", request ->
-                        ServerResponse.ok().body( Mono.just(""), String.class))
-                .POST("catalog-fallback", request ->
-                        ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE).build())
+        return RouterFunctions.route()
+                .GET(
+                        "catalog-fallback",
+                        request -> ServerResponse.ok().body(Mono.just(""), String.class))
+                .POST(
+                        "catalog-fallback",
+                        request -> ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE).build())
                 .build();
     }
 }

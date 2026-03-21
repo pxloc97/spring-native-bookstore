@@ -31,11 +31,32 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres-catalog:5432/polardb_catalog
 
+  edge-service:
+    depends_on:
+      - config-service
+      - catalog-service
+      - order-service
+      - polar-redis
+    image: "pxloc97/edge-service:0.0.1-SNAPSHOT"
+    container_name: "edge-service"
+    ports:
+      - 8000:8000
+      - 9000:9000
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8000
+      - BPL_JVM_THREAD_COUNT=50
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - CATALOG_SERVICE_URL=http://catalog-service:9001
+      - ORDER_SERVICE_URL=http://order-service:9002
+
   order-service:
     depends_on:
       - config-service
       - catalog-service
       - polar-postgres-order
+      - polar-rabbitmq
     image: "pxloc97/order-service:0.0.1-SNAPSHOT"
     container_name: "order-service"
     ports:
@@ -49,6 +70,25 @@ services:
       - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres-order:5432/polardb_order
       - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres-order:5432/polardb_order
       - POLAR_CATALOG_SERVICE_URL=http://catalog-service:9001
+      - SPRING_RABBITMQ_HOST=polar-rabbitmq
+
+  dispatcher-service:
+    depends_on:
+      - config-service
+      - order-service
+      - polar-rabbitmq
+    image: "pxloc97/dispatcher-service:0.0.1-SNAPSHOT"
+    container_name: "dispatcher-service"
+    ports:
+      - 8003:8003
+      - 8080:8080
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8003
+      - BPL_JVM_THREAD_COUNT=50
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_RABBITMQ_HOST=polar-rabbitmq
 
   polar-postgres-order:
     image: "postgres:13.4"
@@ -64,3 +104,12 @@ services:
     container_name: "polar-redis"
     ports:
       - 6379:6379
+  polar-rabbitmq:
+    image: "rabbitmq:3.8-management"
+    container_name: "polar-rabbitmq"
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password

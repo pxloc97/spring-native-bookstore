@@ -8,6 +8,9 @@
       <module name="config-service" options="-parameters" />
       <module name="config-service.main" options="-parameters" />
       <module name="config-service.test" options="-parameters" />
+      <module name="dispatcher-service" options="-parameters" />
+      <module name="dispatcher-service.main" options="-parameters" />
+      <module name="dispatcher-service.test" options="-parameters" />
       <module name="edge-service" options="-parameters" />
       <module name="edge-service.main" options="-parameters" />
       <module name="edge-service.test" options="-parameters" />

@@ -11,16 +11,15 @@ import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "spring.cloud.config.enabled=false"
-)
+        properties = "spring.cloud.config.enabled=false")
 @Testcontainers
 class EdgeServiceApplicationTests {
 
     private static final int REDIS_PORT = 6379;
 
     @Container
-    static GenericContainer<?> redisProperties = new GenericContainer<>(DockerImageName.parse("redis:6.2"))
-            .withExposedPorts(REDIS_PORT);
+    static GenericContainer<?> redisProperties =
+            new GenericContainer<>(DockerImageName.parse("redis:6.2")).withExposedPorts(REDIS_PORT);
 
     @DynamicPropertySource
     static void redisProperties(DynamicPropertyRegistry registry) {
@@ -30,5 +29,4 @@ class EdgeServiceApplicationTests {
 
     @Test
     void verifyThatSpringContextLoads() {}
-
 }

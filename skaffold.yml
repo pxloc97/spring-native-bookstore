@@ -12,11 +12,22 @@ build:
         builder: paketobuildpacks/builder-jammy-base
         env:
           - BP_JVM_VERSION=21.*
+    - image: pxloc97/dispatcher-service
+      context: dispatcher-service
+      buildpacks:
+        builder: paketobuildpacks/builder-jammy-base
+        env:
+          - BP_JVM_VERSION=21.*
 manifests:
   rawYaml:
+    - config-service/k8s/deployment.yml
+    - config-service/k8s/service.yml
+    - polar-deployment/kubernetes/local/rabbitmq.yml
     - edge-service/k8s/deployment.yml
     - edge-service/k8s/service.yml
     - edge-service/k8s/ingress.yml
+    - dispatcher-service/k8s/deployment.yml
+    - dispatcher-service/k8s/service.yml
 deploy:
   kubectl: {}
 profiles:

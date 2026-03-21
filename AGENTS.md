@@ -1,7 +1,7 @@
 # AGENTS
 
 ## Mission
-- Build and operate Spring bookstore services (`catalog-service`, `order-service`, `config-service`) with deterministic local and CI behavior.
+- Build and operate Spring bookstore services (`catalog-service`, `order-service`, `dispatcher-service`, `edge-service`, `config-service`) with deterministic local and CI behavior.
 - Favor correctness, reproducibility, and incremental changes over clever shortcuts.
 - Keep runtime config centralized through Config Server and `config/` to avoid drift.
 - Run the smallest useful verification for every change and document any skipped checks.
@@ -10,6 +10,8 @@
 ## Repository Layout
 - `catalog-service/`: REST catalog API, Spring MVC + Spring Data JDBC + Flyway.
 - `order-service/`: reactive order API, Spring WebFlux + Spring Data R2DBC + Flyway.
+- `dispatcher-service/`: stream processor that consumes accepted orders and publishes dispatched events.
+- `edge-service/`: API gateway for catalog and order APIs.
 - `config-service/`: Spring Cloud Config Server.
 - `config/`: config data consumed by Config Server (per service/profile YAML files).
 - `polar-deployment/docker/`: Docker Compose stack.
@@ -43,7 +45,7 @@
   - `cd order-service && ./gradlew bootRun`
 - Root Makefile shortcuts:
   - `make build`, `make test`, `make clean`
-  - `make run-config`, `make run-catalog`, `make run-order`
+  - `make run-config`, `make run-catalog`, `make run-order`, `make run-dispatcher`, `make run-edge`
   - `make infra-up`, `make infra-down`, `make compose-up`, `make compose-down`
   - `make k8s-up`, `make k8s-down`, `make k8s-status`
   - `make skaffold-dev|skaffold-run|skaffold-delete` (requires `skaffold.yml`)

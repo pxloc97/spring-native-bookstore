@@ -4,6 +4,7 @@
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$/catalog-service" />
     <file type="web" url="file://$PROJECT_DIR$/config-service" />
+    <file type="web" url="file://$PROJECT_DIR$/dispatcher-service" />
     <file type="web" url="file://$PROJECT_DIR$/edge-service" />
     <file type="web" url="file://$PROJECT_DIR$/order-service" />
   </component>

@@ -1,9 +1,10 @@
 SHELL := /bin/bash
 
-SERVICES := config catalog order edge
+SERVICES := config catalog order dispatcher edge
 SERVICE_DIR_config := config-service
 SERVICE_DIR_catalog := catalog-service
 SERVICE_DIR_order := order-service
+SERVICE_DIR_dispatcher := dispatcher-service
 SERVICE_DIR_edge := edge-service
 
 KIND_CLUSTER ?= bookstore
@@ -12,7 +13,8 @@ KUBE_CONTEXT := kind-$(KIND_CLUSTER)
 K8S_PLATFORM_FILES := \
 	polar-deployment/kubernetes/local/postgresql.yml \
 	polar-deployment/kubernetes/local/postgresql-order.yml \
-	polar-deployment/kubernetes/local/redis.yml
+	polar-deployment/kubernetes/local/redis.yml \
+	polar-deployment/kubernetes/local/rabbitmq.yml
 EDGE_K8S_FILES := edge-service/k8s/deployment.yml edge-service/k8s/service.yml edge-service/k8s/ingress.yml
 SKAFFOLD_FILE := skaffold.yml
 INGRESS_NGINX_VERSION := controller-v1.11.3
@@ -33,16 +35,16 @@ test: $(addprefix test-,$(SERVICES)) ## Test all services
 
 clean: $(addprefix clean-,$(SERVICES)) ## Clean all services
 
-build-%: ## Build one service (config|catalog|order|edge)
+build-%: ## Build one service (config|catalog|order|dispatcher|edge)
 	cd $(SERVICE_DIR_$*) && ./gradlew clean build
 
-test-%: ## Test one service (config|catalog|order|edge)
+test-%: ## Test one service (config|catalog|order|dispatcher|edge)
 	cd $(SERVICE_DIR_$*) && ./gradlew test
 
-clean-%: ## Clean one service (config|catalog|order|edge)
+clean-%: ## Clean one service (config|catalog|order|dispatcher|edge)
 	cd $(SERVICE_DIR_$*) && ./gradlew clean
 
-run-%: ## Run one service locally (config|catalog|order|edge)
+run-%: ## Run one service locally (config|catalog|order|dispatcher|edge)
 	cd $(SERVICE_DIR_$*) && ./gradlew bootRun
 
 cluster-create: ## Create kind cluster and install ingress-nginx
@@ -63,10 +65,10 @@ ingress-wait: ## Wait for ingress-nginx controller to be ready
 		--selector=app.kubernetes.io/component=controller \
 		--timeout=180s
 
-platform-up: ## Apply local backing services (Postgres + Redis)
+platform-up: ## Apply local backing services (Postgres + Redis + RabbitMQ)
 	kubectl apply --context $(KUBE_CONTEXT) -f $(K8S_PLATFORM_FILES)
 
-platform-down: ## Delete local backing services (Postgres + Redis)
+platform-down: ## Delete local backing services (Postgres + Redis + RabbitMQ)
 	kubectl delete --context $(KUBE_CONTEXT) -f $(K8S_PLATFORM_FILES)
 
 edge-up: ## Apply edge-service Kubernetes manifests (Deployment/Service/Ingress)
