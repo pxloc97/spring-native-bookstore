@@ -20,7 +20,7 @@ class DispatchingFunctionsIntegrationTests {
 
     @Test
     void packAndLabelOrder() {
-        Function<OrderAcceptedMessage, Flux<Message<byte[]>>> packAndLabel =
+        Function<OrderAcceptedMessage, Flux<?>> packAndLabel =
                 catalog.lookup(Function.class, "pack|label");
         long orderId = 121;
 
@@ -31,10 +31,15 @@ class DispatchingFunctionsIntegrationTests {
                 .verifyComplete();
     }
 
-    private boolean isExpectedDispatchedOrder(
-            Message<byte[]> dispatchedOrderMessage, long orderId) {
-        return objectMapper
-                .readValue(dispatchedOrderMessage.getPayload(), OrderDispatchedMessage.class)
-                .equals(new OrderDispatchedMessage(orderId));
+    private boolean isExpectedDispatchedOrder(Object payload, long orderId) {
+        if (payload instanceof OrderDispatchedMessage orderDispatchedMessage) {
+            return orderDispatchedMessage.equals(new OrderDispatchedMessage(orderId));
+        }
+        if (payload instanceof Message<?> message && message.getPayload() instanceof byte[] bytes) {
+            return objectMapper
+                    .readValue(bytes, OrderDispatchedMessage.class)
+                    .equals(new OrderDispatchedMessage(orderId));
+        }
+        return false;
     }
 }

@@ -20,8 +20,8 @@ SKAFFOLD_FILE := skaffold.yml
 INGRESS_NGINX_VERSION := controller-v1.11.3
 INGRESS_NGINX_MANIFEST := https://raw.githubusercontent.com/kubernetes/ingress-nginx/$(INGRESS_NGINX_VERSION)/deploy/static/provider/kind/deploy.yaml
 
-.PHONY: help build test clean \
-	build-% test-% clean-% run-% \
+.PHONY: help build test clean spotless spotless-apply \
+	build-% test-% clean-% run-% spotless-% spotless-apply-% \
 	platform-up platform-down edge-up edge-down k8s-status \
 	cluster-create cluster-delete ingress-install ingress-wait \
 	skaffold-dev skaffold-run skaffold-delete
@@ -35,6 +35,10 @@ test: $(addprefix test-,$(SERVICES)) ## Test all services
 
 clean: $(addprefix clean-,$(SERVICES)) ## Clean all services
 
+spotless: $(addprefix spotless-,$(SERVICES)) ## Run Spotless check for all services
+
+spotless-apply: $(addprefix spotless-apply-,$(SERVICES)) ## Apply Spotless formatting for all services
+
 build-%: ## Build one service (config|catalog|order|dispatcher|edge)
 	cd $(SERVICE_DIR_$*) && ./gradlew clean build
 
@@ -46,6 +50,12 @@ clean-%: ## Clean one service (config|catalog|order|dispatcher|edge)
 
 run-%: ## Run one service locally (config|catalog|order|dispatcher|edge)
 	cd $(SERVICE_DIR_$*) && ./gradlew bootRun
+
+spotless-apply-%: ## Apply Spotless formatting for one service (config|catalog|order|dispatcher|edge)
+	cd $(SERVICE_DIR_$*) && ./gradlew spotlessApply
+
+spotless-%: ## Run Spotless check for one service (config|catalog|order|dispatcher|edge)
+	cd $(SERVICE_DIR_$*) && ./gradlew spotlessCheck
 
 cluster-create: ## Create kind cluster and install ingress-nginx
 	kind create cluster --name $(KIND_CLUSTER) --config $(KIND_CONFIG)
