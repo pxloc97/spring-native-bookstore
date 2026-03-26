@@ -22,6 +22,17 @@ spring:
         initial-interval: 1000
         max-interval: 2000
         multiplier: 1.1
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: edge-service
+            client-secret: polar-keycloak-secret
+            scope: openid
+        provider:
+          keycloak:
+            issuer-uri:  ${KEYCLOAK_URL:http://localhost:8080}/realms/PolarBookshop
 
 management:
   endpoints:

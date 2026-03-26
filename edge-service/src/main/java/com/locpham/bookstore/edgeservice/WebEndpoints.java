@@ -15,10 +15,10 @@ public class WebEndpoints {
     public RouterFunction<ServerResponse> routeFunction() {
         return RouterFunctions.route()
                 .GET(
-                        "catalog-fallback",
+                        "/catalog-fallback",
                         request -> ServerResponse.ok().body(Mono.just(""), String.class))
                 .POST(
-                        "catalog-fallback",
+                        "/catalog-fallback",
                         request -> ServerResponse.status(HttpStatus.SERVICE_UNAVAILABLE).build())
                 .build();
     }

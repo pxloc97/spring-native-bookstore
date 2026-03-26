@@ -7,7 +7,13 @@ spring:
     gateway:
       server:
         webflux:
+          default-filters:
+            - SaveSession
           routes:
+            - id: spa-route
+              uri: http://polar-ui:9004
+              predicates:
+                - Path=/,/*.css,/*.js,/favicon.ico
             - id: catalog-route
               uri: http://catalog-service:9001
               predicates:
