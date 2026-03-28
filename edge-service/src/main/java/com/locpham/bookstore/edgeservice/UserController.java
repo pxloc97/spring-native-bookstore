@@ -11,13 +11,15 @@ import java.util.List;
 
 @RestController
 public class UserController {
+    public static final String ROLE_CLAIMS = "roles";
+
     @GetMapping("user")
     public Mono<User> getUser(@AuthenticationPrincipal OidcUser oidcUser) {
         var user = new User(
                 oidcUser.getPreferredUsername(),
                 oidcUser.getGivenName(),
                 oidcUser.getFamilyName(),
-                List.of("employee", "customer")
+                oidcUser.getClaimAsStringList(ROLE_CLAIMS)
         );
         return Mono.just(user);
     }

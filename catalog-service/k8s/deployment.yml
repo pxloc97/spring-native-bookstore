@@ -35,3 +35,5 @@ spec:
               value: "password"
             - name: SPRING_CLOUD_CONFIG_URI
               value: "http://config-service"
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              value: "http://polar-keycloak/realms/PolarBookshop"

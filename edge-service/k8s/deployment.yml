@@ -35,3 +35,9 @@ spec:
               value: "http://catalog-service"
             - name: ORDER_SERVICE_URL
               value: "http://order-service:9002"
+            - name: SPA_URL
+              value: "http://polar-ui"
+            - name: SPRING_REDIS_HOST
+              value: "polar-redis"
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
+              value: "http://polar-keycloak/realms/PolarBookshop"

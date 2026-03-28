@@ -3,12 +3,22 @@ spring:
     redis:
       host: polar-redis
       port: 6379
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://polar-keycloak:8080/realms/PolarBookshop
   cloud:
+    config:
+      bus:
+        enabled: true
     gateway:
       server:
         webflux:
           default-filters:
             - SaveSession
+            - TokenRelay
           routes:
             - id: spa-route
               uri: http://polar-ui:9004

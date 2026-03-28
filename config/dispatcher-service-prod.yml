@@ -1,3 +1,7 @@
 spring:
+  cloud:
+    config:
+      bus:
+        enabled: true
   rabbitmq:
     host: polar-rabbitmq

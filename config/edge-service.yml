@@ -16,12 +16,27 @@ spring:
     timeout: 10m
     redis:
       namespace: polar:edge
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: edge-service
+            client-secret: polar-keycloak-secret
+            scope: openid,roles
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_URL:http://localhost:8080}/realms/PolarBookshop
   cloud:
+    config:
+      bus:
+        enabled: false
     gateway:
       server:
         webflux:
           default-filters:
             - SaveSession
+            - TokenRelay
             - name: Retry
               args:
                 retries: 3

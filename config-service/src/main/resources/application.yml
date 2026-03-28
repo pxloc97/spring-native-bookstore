@@ -9,6 +9,10 @@ server:
 spring:
   application:
     name: config-service
+  security:
+    user:
+      name: user
+      password: password
   cloud:
     config:
       server:
@@ -19,3 +23,9 @@ spring:
           timeout: 5
           clone-on-start: true
           force-pull: true
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: user
+    password: password
+    connection-timeout: 2s

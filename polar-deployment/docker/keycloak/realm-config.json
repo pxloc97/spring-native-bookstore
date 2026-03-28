@@ -1,0 +1,67 @@
+{
+  "realm": "PolarBookshop",
+  "enabled": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "customer",
+        "description": "Customer role for Polar Bookshop"
+      },
+      {
+        "name": "employee",
+        "description": "Employee role for Polar Bookshop"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "edge-service",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "polar-keycloak-secret",
+      "redirectUris": [
+        "http://localhost:9000/login/oauth2/code/*",
+        "http://localhost:9000"
+      ],
+      "webOrigins": [
+        "http://localhost:9000"
+      ],
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "bjorn",
+      "enabled": true,
+      "firstName": "Bjorn",
+      "lastName": "Vinterberg",
+      "credentials": [
+        {
+          "type": "password",
+          "secretData": "{\"value\":\"G2tnvWb5IYT/fX5sJ2BPJABYPmePx6fSTsfq2rguhHBsuH4Bx5C54m0r5ijzP+r3Q/87hsn0B6MJyiXiaRxisQ==\",\"salt\":\"JQUxC+TXJ5z1C1KiExG6TA==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+        }
+      ],
+      "realmRoles": [ "customer" ]
+    },
+    {
+      "username": "isabelle",
+      "enabled": true,
+      "firstName": "Isabelle",
+      "lastName": "Dahl",
+      "credentials": [
+        {
+          "type": "password",
+          "secretData": "{\"value\":\"DIsOYpeZ5t6/z4isr/s9xMQAajA2lLn/UCTookY+saAyLO0fsBZ2oyI76Foxze4ONJkrFyIOWXsX95nZzR42gA==\",\"salt\":\"HrTP/yh9Ipe+9oiGa09xQw==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+        }
+      ],
+      "realmRoles": [ "customer", "employee" ]
+    }
+  ]
+}

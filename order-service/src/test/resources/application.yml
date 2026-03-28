@@ -2,6 +2,11 @@ spring:
   cloud:
     config:
       enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:9999/oauth2/jwks
 
 polar:
   catalog-service-url: http://localhost:9001

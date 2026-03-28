@@ -54,3 +54,8 @@ spring:
     username: user
     password: password
     connection-timeout: 1s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_URL:http://localhost:8080}/realms/PolarBookshop

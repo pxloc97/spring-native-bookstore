@@ -1,5 +1,8 @@
 spring:
   cloud:
+    config:
+      bus:
+        enabled: false
     function:
       definition: pack|label
     stream:

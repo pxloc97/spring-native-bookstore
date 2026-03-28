@@ -1,2 +1,13 @@
 polar:
   greeting: "Welcome to the catalog from the config server"
+
+spring:
+  cloud:
+    config:
+      bus:
+        enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_URL:http://localhost:8080}/realms/PolarBookshop

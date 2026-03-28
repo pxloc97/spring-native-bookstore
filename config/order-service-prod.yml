@@ -1,2 +1,13 @@
 polar:
   catalog-service-url: http://localhost:9001
+
+spring:
+  cloud:
+    config:
+      bus:
+        enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://polar-keycloak:8080/realms/PolarBookshop
