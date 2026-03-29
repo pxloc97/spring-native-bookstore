@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -13,16 +14,19 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import reactor.test.StepVerifier;
 
+import java.util.Objects;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(DataConfig.class)
 @Testcontainers
 class OrderRepositoryR2dbcTests {
 
     @Container
-    static final PostgreSQLContainer<?> postgresql =
-            new PostgreSQLContainer<>(DockerImageName.parse("postgres:13.4"));
+    static PostgreSQLContainer<?> postgresql =
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:14.12"));
 
-    @Autowired private OrderRepository orderRepository;
+    @Autowired
+    private OrderRepository orderRepository;
 
     @DynamicPropertySource
     static void postgresqlProperties(DynamicPropertyRegistry registry) {
@@ -37,7 +41,16 @@ class OrderRepositoryR2dbcTests {
     private static String r2dbcUrl() {
         return String.format(
                 "r2dbc:postgresql://%s:%s/%s",
-                postgresql.getHost(), postgresql.getMappedPort(5432), postgresql.getDatabaseName());
+                postgresql.getHost(),
+                postgresql.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
+                postgresql.getDatabaseName());
+    }
+
+    @Test
+    void findOrderByIdWhenNotExisting() {
+        StepVerifier.create(orderRepository.findById(394L))
+                .expectNextCount(0)
+                .verifyComplete();
     }
 
     @Test
@@ -46,6 +59,27 @@ class OrderRepositoryR2dbcTests {
 
         StepVerifier.create(orderRepository.save(rejectedOrder))
                 .expectNextMatches(order -> order.status().equals(OrderStatus.REJECTED))
+                .verifyComplete();
+    }
+
+    @Test
+    void whenCreateOrderNotAuthenticatedThenNoAuditMetadata() {
+        var rejectedOrder = OrderService.buildRejectedOrder("1234567890", 3);
+
+        StepVerifier.create(orderRepository.save(rejectedOrder))
+                .expectNextMatches(order ->
+                        Objects.isNull(order.createdBy()) && Objects.isNull(order.lastModifiedBy()))
+                .verifyComplete();
+    }
+
+    @Test
+    @WithMockUser("marlena")
+    void whenCreateOrderAuthenticatedThenAuditMetadata() {
+        var rejectedOrder = OrderService.buildRejectedOrder("1234567890", 3);
+
+        StepVerifier.create(orderRepository.save(rejectedOrder))
+                .expectNextMatches(order ->
+                        order.createdBy().equals("marlena") && order.lastModifiedBy().equals("marlena"))
                 .verifyComplete();
     }
 }

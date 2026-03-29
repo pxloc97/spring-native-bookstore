@@ -27,3 +27,16 @@ spec:
           env:
             - name: BPL_JVM_THREAD_COUNT
               value: "50"
+          volumeMounts:
+            - name: config-service-volume
+              mountPath: /workspace/config
+            - name: config-service-volume-secret
+              mountPath: /workspace/secrets/config-service
+              readOnly: true
+      volumes:
+        - name: config-service-volume
+          configMap:
+            name: config-service
+        - name: config-service-volume-secret
+          secret:
+            secretName: config-service

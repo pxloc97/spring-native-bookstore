@@ -13,6 +13,9 @@ spring:
     user:
       name: user
       password: password
+  logging:
+    level:
+      org.springframework.security: DEBUG
   cloud:
     config:
       server:

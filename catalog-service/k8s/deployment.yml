@@ -37,3 +37,16 @@ spec:
               value: "http://config-service"
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
               value: "http://polar-keycloak/realms/PolarBookshop"
+          volumeMounts:
+            - name: catalog-service-volume
+              mountPath: /workspace/config
+            - name: catalog-service-volume-secret
+              mountPath: /workspace/secrets/catalog-service
+              readOnly: true
+      volumes:
+        - name: catalog-service-volume
+          configMap:
+            name: catalog-service
+        - name: catalog-service-volume-secret
+          secret:
+            secretName: catalog-service

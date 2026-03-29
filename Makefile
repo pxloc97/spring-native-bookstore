@@ -1,29 +1,25 @@
 SHELL := /bin/bash
 
 SERVICES := config catalog order dispatcher edge
-SERVICE_DIR_config := config-service
-SERVICE_DIR_catalog := catalog-service
-SERVICE_DIR_order := order-service
-SERVICE_DIR_dispatcher := dispatcher-service
-SERVICE_DIR_edge := edge-service
 
-KIND_CLUSTER ?= bookstore
-KIND_CONFIG := polar-deployment/kubernetes/local/kind-config.yml
-KUBE_CONTEXT := kind-$(KIND_CLUSTER)
+MINIKUBE_PROFILE ?= polar
+KUBE_CONTEXT ?= $(MINIKUBE_PROFILE)
 K8S_PLATFORM_FILES := \
 	polar-deployment/kubernetes/local/postgresql.yml \
 	polar-deployment/kubernetes/local/postgresql-order.yml \
+	polar-deployment/kubernetes/local/keycloak.yml \
 	polar-deployment/kubernetes/local/redis.yml \
 	polar-deployment/kubernetes/local/rabbitmq.yml
 EDGE_K8S_FILES := edge-service/k8s/deployment.yml edge-service/k8s/service.yml edge-service/k8s/ingress.yml
 SKAFFOLD_FILE := skaffold.yml
-INGRESS_NGINX_VERSION := controller-v1.11.3
-INGRESS_NGINX_MANIFEST := https://raw.githubusercontent.com/kubernetes/ingress-nginx/$(INGRESS_NGINX_VERSION)/deploy/static/provider/kind/deploy.yaml
-
-.PHONY: help build test clean spotless spotless-apply \
+.PHONY: help build test clean image image-publish spotless spotless-apply \
 	build-% test-% clean-% run-% spotless-% spotless-apply-% \
+	image-% image-publish-% \
+	create-cluster deploy-platform \
+	reset \
+	tilt-up tilt-down \
 	platform-up platform-down edge-up edge-down k8s-status \
-	cluster-create cluster-delete ingress-install ingress-wait \
+	cluster-create cluster-delete cluster-down \
 	skaffold-dev skaffold-run skaffold-delete
 
 help: ## Show available targets
@@ -35,66 +31,79 @@ test: $(addprefix test-,$(SERVICES)) ## Test all services
 
 clean: $(addprefix clean-,$(SERVICES)) ## Clean all services
 
+image: $(addprefix image-,$(SERVICES)) ## Build OCI images for all services
+
+image-publish: $(addprefix image-publish-,$(SERVICES)) ## Build and publish OCI images for all services
+
 spotless: $(addprefix spotless-,$(SERVICES)) ## Run Spotless check for all services
 
 spotless-apply: $(addprefix spotless-apply-,$(SERVICES)) ## Apply Spotless formatting for all services
 
 build-%: ## Build one service (config|catalog|order|dispatcher|edge)
-	cd $(SERVICE_DIR_$*) && ./gradlew clean build
+	cd $*-service && ./gradlew clean build
 
 test-%: ## Test one service (config|catalog|order|dispatcher|edge)
-	cd $(SERVICE_DIR_$*) && ./gradlew test
+	cd $*-service && ./gradlew test
 
 clean-%: ## Clean one service (config|catalog|order|dispatcher|edge)
-	cd $(SERVICE_DIR_$*) && ./gradlew clean
+	cd $*-service && ./gradlew clean
 
 run-%: ## Run one service locally (config|catalog|order|dispatcher|edge)
-	cd $(SERVICE_DIR_$*) && ./gradlew bootRun
+	cd $*-service && ./gradlew bootRun
+
+image-publish-%: ## Build and publish OCI image for one service (config|catalog|order|dispatcher|edge)
+	cd $*-service && ./gradlew bootBuildImage --publishImage
+
+image-%: ## Build OCI image for one service (config|catalog|order|dispatcher|edge)
+	cd $*-service && ./gradlew bootBuildImage
 
 spotless-apply-%: ## Apply Spotless formatting for one service (config|catalog|order|dispatcher|edge)
-	cd $(SERVICE_DIR_$*) && ./gradlew spotlessApply
+	cd $*-service && ./gradlew spotlessApply
 
 spotless-%: ## Run Spotless check for one service (config|catalog|order|dispatcher|edge)
-	cd $(SERVICE_DIR_$*) && ./gradlew spotlessCheck
+	cd $*-service && ./gradlew spotlessCheck
 
-cluster-create: ## Create kind cluster and install ingress-nginx
-	kind create cluster --name $(KIND_CLUSTER) --config $(KIND_CONFIG)
-	$(MAKE) ingress-install
+cluster-create: ## Create minikube cluster and deploy platform dependencies
+	./create-cluster.sh
 
-cluster-delete: ## Delete kind cluster
-	kind delete cluster --name $(KIND_CLUSTER)
+create-cluster: cluster-create ## Alias for cluster-create
 
-ingress-install: ## Install ingress-nginx in current cluster
-	kubectl apply --context $(KUBE_CONTEXT) -f $(INGRESS_NGINX_MANIFEST)
-	$(MAKE) ingress-wait
+reset: ## Clean local platform and delete minikube profile
+	-tilt down
+	-minikube delete --profile $(MINIKUBE_PROFILE)
 
-ingress-wait: ## Wait for ingress-nginx controller to be ready
-	kubectl wait --context $(KUBE_CONTEXT) \
-		--namespace ingress-nginx \
-		--for=condition=ready pod \
-		--selector=app.kubernetes.io/component=controller \
-		--timeout=180s
+cluster-delete: ## Delete minikube cluster
+	minikube delete --profile $(MINIKUBE_PROFILE)
 
-platform-up: ## Apply local backing services (Postgres + Redis + RabbitMQ)
-	kubectl apply --context $(KUBE_CONTEXT) -f $(K8S_PLATFORM_FILES)
+cluster-down: cluster-delete ## Alias for cluster-delete
 
-platform-down: ## Delete local backing services (Postgres + Redis + RabbitMQ)
-	kubectl delete --context $(KUBE_CONTEXT) -f $(K8S_PLATFORM_FILES)
+platform-up: tilt-up ## Start full local platform via Tilt
+
+deploy-platform: ## Apply and wait for backing services only
+	./deploy-platform.sh
+
+platform-down: tilt-down ## Stop local platform managed by Tilt
 
 edge-up: ## Apply edge-service Kubernetes manifests (Deployment/Service/Ingress)
-	kubectl apply --context $(KUBE_CONTEXT) -f $(EDGE_K8S_FILES)
+	kubectl apply --context $(KUBE_CONTEXT) $(foreach f,$(EDGE_K8S_FILES),-f $(f))
 
 edge-down: ## Delete edge-service Kubernetes manifests
-	kubectl delete --context $(KUBE_CONTEXT) -f $(EDGE_K8S_FILES)
+	kubectl delete --context $(KUBE_CONTEXT) $(foreach f,$(EDGE_K8S_FILES),-f $(f))
 
 k8s-status: ## Show deployments, services, ingress, and pods
 	kubectl get --context $(KUBE_CONTEXT) deployments,services,ingress,pods
 
-skaffold-dev: ## Run Skaffold dev against kind cluster
+skaffold-dev: ## Run Skaffold dev against Kubernetes cluster
 	skaffold dev -f $(SKAFFOLD_FILE) -p kind
 
-skaffold-run: ## Run Skaffold once against kind cluster
+skaffold-run: ## Run Skaffold once against Kubernetes cluster
 	skaffold run -f $(SKAFFOLD_FILE) -p kind
 
 skaffold-delete: ## Delete resources managed by Skaffold
 	skaffold delete -f $(SKAFFOLD_FILE) -p kind
+
+tilt-up: ## Start Tilt using the root Tiltfile
+	tilt up
+
+tilt-down: ## Stop Tilt and clean up Tilt-managed resources
+	tilt down

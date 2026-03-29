@@ -17,3 +17,6 @@ manifests:
   rawYaml:
     - k8s/deployment.yml
     - k8s/service.yml
+  kustomize:
+    paths:
+      - k8s

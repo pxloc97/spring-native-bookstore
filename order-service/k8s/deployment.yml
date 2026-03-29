@@ -39,3 +39,16 @@ spec:
               value: "polar-rabbitmq"
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
               value: "http://polar-keycloak/realms/PolarBookshop"
+          volumeMounts:
+            - name: order-service-volume
+              mountPath: /workspace/config
+            - name: order-service-volume-secret
+              mountPath: /workspace/secrets/order-service
+              readOnly: true
+      volumes:
+        - name: order-service-volume
+          configMap:
+            name: order-service
+        - name: order-service-volume-secret
+          secret:
+            secretName: order-service

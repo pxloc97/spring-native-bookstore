@@ -3,10 +3,12 @@ package com.locpham.bookstore.orderservice.domain;
 import com.locpham.bookstore.orderservice.book.Book;
 import com.locpham.bookstore.orderservice.book.BookClient;
 import com.locpham.bookstore.orderservice.event.OrderAcceptedMessage;
+import com.locpham.bookstore.orderservice.event.OrderDispatchedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -24,10 +26,11 @@ public class OrderService {
         this.streamBridge = streamBridge;
     }
 
-    public Flux<Order> findAll() {
-        return orderRepository.findAll();
+    public Flux<Order> getAllOrders(String userId) {
+        return orderRepository.findAllByCreatedBy(userId);
     }
 
+    @Transactional
     public Mono<Order> submitOrder(String isbn, int quantity) {
         return bookClient
                 .getBookByIsbn(isbn)
@@ -38,30 +41,12 @@ public class OrderService {
     }
 
     public static Order buildRejectedOrder(String isbn, int quantity) {
-        return Order.build(isbn, "", 0.0, quantity, OrderStatus.REJECTED);
+        return Order.build(isbn, null, 0.0, quantity, OrderStatus.REJECTED);
     }
 
     public static Order buildAcceptedOrder(Book book, int quantity) {
-        return Order.build(book.isbn(), "", book.price(), quantity, OrderStatus.ACCEPTED);
-    }
-
-    public void updateOrderStatus(Long orderId, OrderStatus status) {
-        orderRepository
-                .findById(orderId)
-                .map(
-                        existingOrder ->
-                                new Order(
-                                        existingOrder.id(),
-                                        existingOrder.bookIsbn(),
-                                        existingOrder.bookName(),
-                                        existingOrder.bookPrice(),
-                                        existingOrder.quantity(),
-                                        status,
-                                        existingOrder.createdDate(),
-                                        existingOrder.lastModifiedDate(),
-                                        existingOrder.version()))
-                .flatMap(orderRepository::save)
-                .subscribe();
+        return Order.build(
+                book.isbn(), book.title() + " - " + book.author(), book.price(), quantity, OrderStatus.ACCEPTED);
     }
 
     public void publishOrderAcceptedEvent(Order order) {
@@ -71,7 +56,29 @@ public class OrderService {
 
         OrderAcceptedMessage orderAcceptedMessage = new OrderAcceptedMessage(order.id());
         log.info("Sending order accepted event with id: {}", order.id());
-        var result = streamBridge.send("order-accepted", orderAcceptedMessage);
+        var result = streamBridge.send("acceptOrder-out-0", orderAcceptedMessage);
         log.info("Result of sending data for order with id {}: {}", order.id(), result);
+    }
+
+    public Flux<Order> consumeOrderDispatchedEvent(Flux<OrderDispatchedMessage> flux) {
+        return flux
+                .flatMap(message -> orderRepository.findById(message.orderId()))
+                .map(this::buildDispatchedOrder)
+                .flatMap(orderRepository::save);
+    }
+
+    private Order buildDispatchedOrder(Order existingOrder) {
+        return new Order(
+                existingOrder.id(),
+                existingOrder.bookIsbn(),
+                existingOrder.bookName(),
+                existingOrder.bookPrice(),
+                existingOrder.quantity(),
+                OrderStatus.DISPATCHED,
+                existingOrder.createdDate(),
+                existingOrder.lastModifiedDate(),
+                existingOrder.createdBy(),
+                existingOrder.lastModifiedBy(),
+                existingOrder.version());
     }
 }

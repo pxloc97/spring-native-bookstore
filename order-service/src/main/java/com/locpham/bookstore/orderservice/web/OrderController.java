@@ -2,6 +2,9 @@ package com.locpham.bookstore.orderservice.web;
 
 import com.locpham.bookstore.orderservice.domain.Order;
 import com.locpham.bookstore.orderservice.domain.OrderService;
+import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,12 +20,12 @@ public class OrderController {
     }
 
     @GetMapping
-    public Flux<Order> getAllOrders() {
-        return orderService.findAll();
+    public Flux<Order> getAllOrders(@AuthenticationPrincipal Jwt jwt) {
+        return orderService.getAllOrders(jwt.getSubject());
     }
 
     @PostMapping
-    public Mono<Order> submitOrder(@RequestBody OrderRequest orderRequest) {
+    public Mono<Order> submitOrder(@RequestBody @Valid OrderRequest orderRequest) {
         return orderService.submitOrder(orderRequest.isbn(), orderRequest.quantity());
     }
 }

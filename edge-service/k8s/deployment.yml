@@ -41,3 +41,16 @@ spec:
               value: "polar-redis"
             - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
               value: "http://polar-keycloak/realms/PolarBookshop"
+          volumeMounts:
+            - name: edge-service-volume
+              mountPath: /workspace/config
+            - name: edge-service-volume-secret
+              mountPath: /workspace/secrets/edge-service
+              readOnly: true
+      volumes:
+        - name: edge-service-volume
+          configMap:
+            name: edge-service
+        - name: edge-service-volume-secret
+          secret:
+            secretName: edge-service
