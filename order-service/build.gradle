@@ -26,6 +26,7 @@ repositories {
 }
 
 ext {
+    set('otelAgentVersion', '1.33.3')
     set('springCloudVersion', "2025.1.0")
     set('testcontainersVersion', "1.19.7")
 }
@@ -49,6 +50,8 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
 
     implementation 'org.flywaydb:flyway-database-postgresql'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly "io.opentelemetry.javaagent:opentelemetry-javaagent:${otelAgentVersion}"
     runtimeOnly 'io.netty:netty-resolver-dns-native-macos::osx-aarch_64'
     runtimeOnly 'org.flywaydb:flyway-core'
     runtimeOnly 'org.postgresql:postgresql'

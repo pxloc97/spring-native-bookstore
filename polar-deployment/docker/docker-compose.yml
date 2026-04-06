@@ -1,15 +1,32 @@
 services:
   config-service:
+    depends_on:
+      - fluent-bit
+      - tempo
     image: "pxloc97/config-service:0.0.1-SNAPSHOT"
     container_name: "config-service"
     ports:
       - 8888:8888
       - 9888:9888
     environment:
+      - SPRING_PROFILES_ACTIVE=native
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/workspace/config
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=9888
+      - BPL_JAVA_NMT_ENABLED=false
       - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=config-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
       - ENCRYPT_KEY=sharedkey
+    volumes:
+      - ../../config:/workspace/config:ro
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "config-service"
 
   polar-postgres-catalog:
     image: "postgres:13.4"
@@ -23,6 +40,8 @@ services:
 
   catalog-service:
     depends_on:
+      - fluent-bit
+      - tempo
       - config-service
       - polar-postgres-catalog
     image: "pxloc97/catalog-service:0.0.1-SNAPSHOT"
@@ -33,13 +52,24 @@ services:
     environment:
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=8001
+      - BPL_JAVA_NMT_ENABLED=false
       - BPL_JVM_THREAD_COUNT=50
-      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=catalog-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
       - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres-catalog:5432/polardb_catalog
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
-
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "catalog-service"
   edge-service:
     depends_on:
+      - fluent-bit
+      - tempo
       - config-service
       - catalog-service
       - order-service
@@ -54,16 +84,28 @@ services:
     environment:
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=8000
+      - BPL_JAVA_NMT_ENABLED=false
       - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=edge-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
       - CATALOG_SERVICE_URL=http://catalog-service:9001
       - ORDER_SERVICE_URL=http://order-service:9002
       - SPA_URL=http://polar-ui:9004
       - KEYCLOAK_URL=http://host.docker.internal:8080
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "edge-service"
 
   order-service:
     depends_on:
+      - fluent-bit
+      - tempo
       - config-service
       - catalog-service
       - polar-postgres-order
@@ -76,16 +118,28 @@ services:
     environment:
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=8002
+      - BPL_JAVA_NMT_ENABLED=false
       - BPL_JVM_THREAD_COUNT=50
-      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=order-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
       - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres-order:5432/polardb_order
       - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres-order:5432/polardb_order
       - POLAR_CATALOG_SERVICE_URL=http://catalog-service:9001
       - SPRING_RABBITMQ_HOST=polar-rabbitmq
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "order-service"
 
   dispatcher-service:
     depends_on:
+      - fluent-bit
+      - tempo
       - config-service
       - order-service
       - polar-rabbitmq
@@ -97,10 +151,20 @@ services:
     environment:
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=8003
+      - BPL_JAVA_NMT_ENABLED=false
       - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=dispatcher-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
       - SPRING_RABBITMQ_HOST=polar-rabbitmq
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "dispatcher-service"
 
   polar-postgres-order:
     image: "postgres:13.4"
@@ -139,9 +203,67 @@ services:
       - 8080:8080
 
   polar-ui:
+    depends_on:
+      - fluent-bit
     image: ghcr.io/polarbookshop/polar-ui:v1
     container_name: polar-ui
     ports:
       - 9004:9004
     environment:
       - PORT=9004
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "polar-ui"
+  grafana:
+    image: grafana/grafana:10.4.7
+    container_name: grafana
+    depends_on:
+      - loki
+      - prometheus
+      - tempo
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: user
+      GF_SECURITY_ADMIN_PASSWORD: password
+    volumes:
+      - ./platform/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./platform/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./platform/grafana/grafana.ini:/etc/grafana/grafana.ini
+
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: loki
+    depends_on:
+      - fluent-bit
+    ports:
+      - "3100:3100"
+
+  fluent-bit:
+    image: grafana/fluent-bit-plugin-loki:main
+    container_name: fluent-bit
+    ports:
+      - "24224:24224"
+    environment:
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+    volumes:
+      - ./platform/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.52.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./platform/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: tempo
+    command: -config.file=/etc/tempo-config.yml
+    ports:
+      - "3110:3100"
+      - "4317:4317"
+    volumes:
+      - ./platform/tempo/tempo.yml:/etc/tempo-config.yml

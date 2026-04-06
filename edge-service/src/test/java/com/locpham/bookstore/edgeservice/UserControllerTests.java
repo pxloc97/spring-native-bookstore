@@ -59,7 +59,7 @@ class UserControllerTests {
                 .uri("/user")
                 .exchange()
                 .expectStatus()
-                .isFound();
+                .isUnauthorized();
     }
 
     @Test

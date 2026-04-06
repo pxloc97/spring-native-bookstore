@@ -9,7 +9,8 @@ K8S_PLATFORM_FILES := \
 	polar-deployment/kubernetes/local/postgresql-order.yml \
 	polar-deployment/kubernetes/local/keycloak.yml \
 	polar-deployment/kubernetes/local/redis.yml \
-	polar-deployment/kubernetes/local/rabbitmq.yml
+	polar-deployment/kubernetes/local/rabbitmq.yml \
+	polar-deployment/kubernetes/local/observability.yml
 EDGE_K8S_FILES := edge-service/k8s/deployment.yml edge-service/k8s/service.yml edge-service/k8s/ingress.yml
 SKAFFOLD_FILE := skaffold.yml
 .PHONY: help build test clean image image-publish spotless spotless-apply \

@@ -20,6 +20,7 @@ repositories {
 }
 
 ext {
+    set('otelAgentVersion', '1.33.3')
     set('springCloudVersion', "2025.1.0")
     set('testcontainersVersion', "1.19.7")
 }
@@ -36,6 +37,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+    implementation 'io.github.resilience4j:resilience4j-micrometer'
+
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly "io.opentelemetry.javaagent:opentelemetry-javaagent:${otelAgentVersion}"
     runtimeOnly 'io.netty:netty-resolver-dns-native-macos::osx-aarch_64'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

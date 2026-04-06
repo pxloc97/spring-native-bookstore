@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost/realms/test
+            authorization-uri: http://localhost/oauth2/authorize
+            token-uri: http://localhost/oauth2/token
+            jwk-set-uri: http://localhost/oauth2/jwks
+            user-info-uri: http://localhost/userinfo
