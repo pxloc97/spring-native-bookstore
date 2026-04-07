@@ -29,40 +29,56 @@ public class SecurityConfig {
     @Bean
     SecurityWebFilterChain springSecurityFilterChain(
             ServerHttpSecurity http,
-            ReactiveClientRegistrationRepository clientRegistrationRepository
-    ) {
-        return http
-                .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("/", "/*.css", "/*.js", "/favicon.ico").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/books/**").permitAll()
-                        .anyExchange().authenticated()
-                )
-                .exceptionHandling(exceptionHandling -> exceptionHandling
-                .authenticationEntryPoint(new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)))
+            ReactiveClientRegistrationRepository clientRegistrationRepository) {
+        return http.authorizeExchange(
+                        exchange ->
+                                exchange.pathMatchers("/actuator/**")
+                                        .permitAll()
+                                        .pathMatchers("/", "/*.css", "/*.js", "/favicon.ico")
+                                        .permitAll()
+                                        .pathMatchers(HttpMethod.GET, "/books/**")
+                                        .permitAll()
+                                        .anyExchange()
+                                        .authenticated())
+                .exceptionHandling(
+                        exceptionHandling ->
+                                exceptionHandling.authenticationEntryPoint(
+                                        new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2Login(Customizer.withDefaults())
-                .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)))
-                .csrf(csrf -> csrf.csrfTokenRepository(
-                        CookieServerCsrfTokenRepository.withHttpOnlyFalse()
-                ))
+                .logout(
+                        logout ->
+                                logout.logoutSuccessHandler(
+                                        oidcLogoutSuccessHandler(clientRegistrationRepository)))
+                .csrf(
+                        csrf ->
+                                csrf.csrfTokenRepository(
+                                        CookieServerCsrfTokenRepository.withHttpOnlyFalse()))
                 .build();
     }
 
     @Bean
     WebFilter csrfWebFilter() {
         return (exchange, chain) -> {
-            exchange.getResponse().beforeCommit(() -> Mono.defer(() -> {
-                Mono<CsrfToken> csrfToken = exchange.getAttribute(CsrfToken.class.getName());
-                return csrfToken != null ? csrfToken.then() : Mono.empty();
-            }));
+            exchange.getResponse()
+                    .beforeCommit(
+                            () ->
+                                    Mono.defer(
+                                            () -> {
+                                                Mono<CsrfToken> csrfToken =
+                                                        exchange.getAttribute(
+                                                                CsrfToken.class.getName());
+                                                return csrfToken != null
+                                                        ? csrfToken.then()
+                                                        : Mono.empty();
+                                            }));
             return chain.filter(exchange);
         };
     }
 
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler(
-            ReactiveClientRegistrationRepository clientRegistrationRepository
-    ) {
-        var oidcLogoutSuccessHandler = new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
+            ReactiveClientRegistrationRepository clientRegistrationRepository) {
+        var oidcLogoutSuccessHandler =
+                new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
         oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}");
         return oidcLogoutSuccessHandler;
     }

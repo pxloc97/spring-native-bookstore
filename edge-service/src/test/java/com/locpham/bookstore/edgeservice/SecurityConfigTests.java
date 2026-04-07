@@ -1,5 +1,7 @@
 package com.locpham.bookstore.edgeservice;
 
+import static org.mockito.Mockito.when;
+
 import com.locpham.bookstore.edgeservice.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,26 +15,17 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.Mockito.when;
-
 @WebFluxTest
 @Import(SecurityConfig.class)
 class SecurityConfigTests {
 
-    @Autowired
-    private WebTestClient webTestClient;
+    @Autowired private WebTestClient webTestClient;
 
-    @MockitoBean
-    private ReactiveClientRegistrationRepository reactiveClientRegistrationRepository;
+    @MockitoBean private ReactiveClientRegistrationRepository reactiveClientRegistrationRepository;
 
     @Test
     void whenLogoutNotAuthenticatedAndNoCsrfTokenThen403() {
-        webTestClient
-                .post()
-                .uri("/logout")
-                .exchange()
-                .expectStatus()
-                .isForbidden();
+        webTestClient.post().uri("/logout").exchange().expectStatus().isForbidden();
     }
 
     @Test

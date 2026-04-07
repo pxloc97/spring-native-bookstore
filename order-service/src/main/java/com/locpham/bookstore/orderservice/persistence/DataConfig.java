@@ -14,9 +14,10 @@ public class DataConfig {
 
     @Bean
     ReactiveAuditorAware<String> auditorAware() {
-        return () -> ReactiveSecurityContextHolder.getContext()
-                .map(SecurityContext::getAuthentication)
-                .filter(Authentication::isAuthenticated)
-                .map(Authentication::getName);
+        return () ->
+                ReactiveSecurityContextHolder.getContext()
+                        .map(SecurityContext::getAuthentication)
+                        .filter(Authentication::isAuthenticated)
+                        .map(Authentication::getName);
     }
 }

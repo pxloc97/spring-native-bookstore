@@ -16,16 +16,25 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/", "/books/**").permitAll()
-                        .anyRequest().hasRole("employee")
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
-                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
-                .sessionManagement(sessionManagement ->
-                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        return http.authorizeHttpRequests(
+                        authorize ->
+                                authorize
+                                        .requestMatchers(EndpointRequest.toAnyEndpoint())
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/", "/books/**")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .hasRole("employee"))
+                .oauth2ResourceServer(
+                        oauth2 ->
+                                oauth2.jwt(
+                                        jwt ->
+                                                jwt.jwtAuthenticationConverter(
+                                                        jwtAuthenticationConverter())))
+                .sessionManagement(
+                        sessionManagement ->
+                                sessionManagement.sessionCreationPolicy(
+                                        SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .build();
     }

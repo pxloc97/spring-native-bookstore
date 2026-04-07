@@ -30,6 +30,16 @@ public record Order(
             int quantity,
             OrderStatus orderStatus) {
         return new Order(
-                null, bookIsbn, bookName, bookPrice, quantity, orderStatus, null, null, null, null, 0);
+                null,
+                bookIsbn,
+                bookName,
+                bookPrice,
+                quantity,
+                orderStatus,
+                null,
+                null,
+                null,
+                null,
+                0);
     }
 }

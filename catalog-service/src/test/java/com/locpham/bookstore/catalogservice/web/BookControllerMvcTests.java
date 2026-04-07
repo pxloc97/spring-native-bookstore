@@ -2,10 +2,10 @@ package com.locpham.bookstore.catalogservice.web;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 import com.locpham.bookstore.catalogservice.domain.Book;
 import com.locpham.bookstore.catalogservice.domain.BookNotFoundException;
@@ -32,9 +32,10 @@ public class BookControllerMvcTests {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .apply(springSecurity())
-                .build();
+        mockMvc =
+                MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                        .apply(springSecurity())
+                        .build();
     }
 
     @Test
@@ -46,39 +47,48 @@ public class BookControllerMvcTests {
 
     @Test
     void whenCreateBookWithoutTokenThenShouldReturn401() throws Exception {
-        var payload = """
+        var payload =
+                """
                 {"isbn":"1234567890","title":"Title","author":"Author","price":10.0,"publisher":"Polarsophia"}
                 """;
-        mockMvc.perform(post("/books")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+        mockMvc.perform(post("/books").contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void whenCreateBookWithCustomerRoleThenShouldReturn403() throws Exception {
-        var payload = """
+        var payload =
+                """
                 {"isbn":"1234567890","title":"Title","author":"Author","price":10.0,"publisher":"Polarsophia"}
                 """;
-        mockMvc.perform(post("/books")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload)
-                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_customer"))))
+        mockMvc.perform(
+                        post("/books")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payload)
+                                .with(
+                                        jwt().authorities(
+                                                        new SimpleGrantedAuthority(
+                                                                "ROLE_customer"))))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void whenCreateBookWithEmployeeRoleThenShouldReturn201() throws Exception {
         var book = Book.build("1234567890", "Title", "Author", 10.0, "Polarsophia");
-        var payload = """
+        var payload =
+                """
                 {"isbn":"1234567890","title":"Title","author":"Author","price":10.0,"publisher":"Polarsophia"}
                 """;
         given(bookService.addBookToCatalog(book)).willReturn(book);
 
-        mockMvc.perform(post("/books")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload)
-                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_employee"))))
+        mockMvc.perform(
+                        post("/books")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payload)
+                                .with(
+                                        jwt().authorities(
+                                                        new SimpleGrantedAuthority(
+                                                                "ROLE_employee"))))
                 .andExpect(status().isCreated());
     }
 }

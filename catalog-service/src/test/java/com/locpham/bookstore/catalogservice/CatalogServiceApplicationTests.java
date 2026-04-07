@@ -1,6 +1,7 @@
 package com.locpham.bookstore.catalogservice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
 import com.locpham.bookstore.catalogservice.domain.Book;
 import org.junit.jupiter.api.Test;
@@ -12,25 +13,24 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import static org.mockito.BDDMockito.given;
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 class CatalogServiceApplicationTests {
 
     @Autowired private WebTestClient webTestClient;
 
-    @MockitoBean
-    private JwtDecoder jwtDecoder;
+    @MockitoBean private JwtDecoder jwtDecoder;
 
     @Test
     void whenPostRequestToBookToCreate() {
         var expectingBook = Book.build("1234567899", "Title", "Author", 9.90, "Polarsophia");
-        given(jwtDecoder.decode("token")).willReturn(Jwt.withTokenValue("token")
-                .header("alg", "none")
-                .claim("sub", "employee")
-                .claim("roles", java.util.List.of("employee"))
-                .build());
+        given(jwtDecoder.decode("token"))
+                .willReturn(
+                        Jwt.withTokenValue("token")
+                                .header("alg", "none")
+                                .claim("sub", "employee")
+                                .claim("roles", java.util.List.of("employee"))
+                                .build());
 
         webTestClient
                 .post()

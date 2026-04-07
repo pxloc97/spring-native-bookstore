@@ -46,7 +46,11 @@ public class OrderService {
 
     public static Order buildAcceptedOrder(Book book, int quantity) {
         return Order.build(
-                book.isbn(), book.title() + " - " + book.author(), book.price(), quantity, OrderStatus.ACCEPTED);
+                book.isbn(),
+                book.title() + " - " + book.author(),
+                book.price(),
+                quantity,
+                OrderStatus.ACCEPTED);
     }
 
     public void publishOrderAcceptedEvent(Order order) {
@@ -61,8 +65,7 @@ public class OrderService {
     }
 
     public Flux<Order> consumeOrderDispatchedEvent(Flux<OrderDispatchedMessage> flux) {
-        return flux
-                .flatMap(message -> orderRepository.findById(message.orderId()))
+        return flux.flatMap(message -> orderRepository.findById(message.orderId()))
                 .map(this::buildDispatchedOrder)
                 .flatMap(orderRepository::save);
     }

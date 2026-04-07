@@ -1,6 +1,7 @@
 package com.locpham.bookstore.orderservice.domain;
 
 import com.locpham.bookstore.orderservice.persistence.DataConfig;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,8 +15,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import reactor.test.StepVerifier;
 
-import java.util.Objects;
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(DataConfig.class)
 @Testcontainers
@@ -25,8 +24,7 @@ class OrderRepositoryR2dbcTests {
     static PostgreSQLContainer<?> postgresql =
             new PostgreSQLContainer<>(DockerImageName.parse("postgres:14.12"));
 
-    @Autowired
-    private OrderRepository orderRepository;
+    @Autowired private OrderRepository orderRepository;
 
     @DynamicPropertySource
     static void postgresqlProperties(DynamicPropertyRegistry registry) {
@@ -48,9 +46,7 @@ class OrderRepositoryR2dbcTests {
 
     @Test
     void findOrderByIdWhenNotExisting() {
-        StepVerifier.create(orderRepository.findById(394L))
-                .expectNextCount(0)
-                .verifyComplete();
+        StepVerifier.create(orderRepository.findById(394L)).expectNextCount(0).verifyComplete();
     }
 
     @Test
@@ -67,8 +63,10 @@ class OrderRepositoryR2dbcTests {
         var rejectedOrder = OrderService.buildRejectedOrder("1234567890", 3);
 
         StepVerifier.create(orderRepository.save(rejectedOrder))
-                .expectNextMatches(order ->
-                        Objects.isNull(order.createdBy()) && Objects.isNull(order.lastModifiedBy()))
+                .expectNextMatches(
+                        order ->
+                                Objects.isNull(order.createdBy())
+                                        && Objects.isNull(order.lastModifiedBy()))
                 .verifyComplete();
     }
 
@@ -78,8 +76,10 @@ class OrderRepositoryR2dbcTests {
         var rejectedOrder = OrderService.buildRejectedOrder("1234567890", 3);
 
         StepVerifier.create(orderRepository.save(rejectedOrder))
-                .expectNextMatches(order ->
-                        order.createdBy().equals("marlena") && order.lastModifiedBy().equals("marlena"))
+                .expectNextMatches(
+                        order ->
+                                order.createdBy().equals("marlena")
+                                        && order.lastModifiedBy().equals("marlena"))
                 .verifyComplete();
     }
 }
