@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '4.0.3'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '6.25.0'
+    id 'nu.studer.jooq' version '9.0'
 }
 
 group = 'com.locpham.bookstore'
@@ -15,10 +16,19 @@ java {
     }
 }
 
+sourceSets {
+    main {
+        java {
+            srcDirs += 'src/main/jooq'
+        }
+    }
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    jooqGenerator
 }
 
 repositories {
@@ -48,6 +58,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.retry:spring-retry'
+
+    implementation 'org.jooq:jooq:3.19.30'
+
+    jooqGenerator 'org.postgresql:postgresql'
 
     implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
@@ -98,6 +112,41 @@ bootBuildImage {
             username = project.findProperty("registryUsername")
             password = project.findProperty("registryToken")
             url = project.findProperty("registryUrl")
+        }
+    }
+}
+
+jooq {
+    version = '3.19.30'
+    configurations {
+        main {
+            generationTool {
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5433/polardb_order'
+                    user = 'user'
+                    password = 'password'
+                }
+                generator {
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        includes = 'public.orders'
+                        excludes = ''
+                        inputSchema = 'public'
+                    }
+                    generate {
+                        deprecated = false
+                        records = true
+                        pojos = false
+                        fluentSetters = true
+                        javaTimeTypes = true
+                    }
+                    target {
+                        packageName = 'com.locpham.bookstore.orderservice.adapter.out.persistence.jooq.generated'
+                        directory = 'src/main/jooq'
+                    }
+                }
+            }
         }
     }
 }

@@ -3,6 +3,9 @@ server:
   shutdown: graceful
   netty:
     connection-timeout: 2s
+polar:
+  catalogServiceUrl: http://localhost:9001
+
 spring:
   application:
     name: order-service
@@ -13,6 +16,8 @@ spring:
   cloud:
     config:
       uri: http://localhost:8888
+      username: user
+      password: password
       request-connect-timeout: 2000
       request-read-timeout: 5000
       fail-fast: true

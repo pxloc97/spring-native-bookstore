@@ -1,6 +1,6 @@
 package com.locpham.bookstore.orderservice.domain;
 
-import com.locpham.bookstore.orderservice.persistence.DataConfig;
+import com.locpham.bookstore.orderservice.bootstrap.config.persistence.DataConfig;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

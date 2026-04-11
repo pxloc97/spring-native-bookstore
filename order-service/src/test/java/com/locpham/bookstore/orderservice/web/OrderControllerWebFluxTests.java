@@ -4,7 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 
-import com.locpham.bookstore.orderservice.config.SecurityConfig;
+import com.locpham.bookstore.orderservice.adapter.in.web.OrderController;
+import com.locpham.bookstore.orderservice.bootstrap.config.SecurityConfig;
 import com.locpham.bookstore.orderservice.domain.Order;
 import com.locpham.bookstore.orderservice.domain.OrderService;
 import com.locpham.bookstore.orderservice.domain.OrderStatus;
