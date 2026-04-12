@@ -44,17 +44,17 @@ kubectl create configmap observability-grafana-config \
 kubectl apply --context "$KUBE_CONTEXT" \
   -f polar-deployment/kubernetes/local/postgresql.yml \
   -f polar-deployment/kubernetes/local/postgresql-order.yml \
+  -f polar-deployment/kubernetes/local/kafka.yml \
   -f polar-deployment/kubernetes/local/keycloak.yml \
   -f polar-deployment/kubernetes/local/redis.yml \
-  -f polar-deployment/kubernetes/local/rabbitmq.yml \
   -f polar-deployment/kubernetes/local/observability.yml
 
 printf "\nWaiting for platform deployments...\n"
 kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/polar-postgres --timeout=180s
 kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/polar-postgres-order --timeout=180s
+kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/polar-kafka --timeout=180s
 kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/polar-keycloak --timeout=300s
 kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/polar-redis --timeout=180s
-kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/polar-rabbitmq --timeout=180s
 kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/loki --timeout=180s
 kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/tempo --timeout=180s
 kubectl wait --context "$KUBE_CONTEXT" --for=condition=available deployment/prometheus --timeout=180s

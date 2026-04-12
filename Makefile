@@ -9,7 +9,7 @@ K8S_PLATFORM_FILES := \
 	polar-deployment/kubernetes/local/postgresql-order.yml \
 	polar-deployment/kubernetes/local/keycloak.yml \
 	polar-deployment/kubernetes/local/redis.yml \
-	polar-deployment/kubernetes/local/rabbitmq.yml \
+	polar-deployment/kubernetes/local/kafka.yml \
 	polar-deployment/kubernetes/local/observability.yml
 EDGE_K8S_FILES := edge-service/k8s/deployment.yml edge-service/k8s/service.yml edge-service/k8s/ingress.yml
 SKAFFOLD_FILE := skaffold.yml
@@ -21,7 +21,8 @@ SKAFFOLD_FILE := skaffold.yml
 	tilt-up tilt-down \
 	platform-up platform-down edge-up edge-down k8s-status \
 	cluster-create cluster-delete cluster-down \
-	skaffold-dev skaffold-run skaffold-delete
+	skaffold-dev skaffold-run skaffold-delete \
+	infra-up infra-down services-up services-down frontend-up frontend-down compose-up compose-down
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"; printf "\nAvailable targets:\n"} /^[a-zA-Z0-9_.-%-]+:.*##/ {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -108,3 +109,25 @@ tilt-up: ## Start Tilt using the root Tiltfile
 
 tilt-down: ## Stop Tilt and clean up Tilt-managed resources
 	tilt down
+
+infra-up: ## Start infrastructure services via Docker Compose (Kafka, Postgres, Keycloak, etc.)
+	cd polar-deployment/docker && docker compose -f docker-compose.yml up -d
+
+infra-down: ## Stop infrastructure services via Docker Compose
+	cd polar-deployment/docker && docker compose -f docker-compose.yml down
+
+services-up: ## Start application services via Docker Compose
+	cd polar-deployment/docker && docker compose -f service.yml up -d
+
+services-down: ## Stop application services via Docker Compose
+	cd polar-deployment/docker && docker compose -f service.yml down
+
+frontend-up: ## Start frontend and observability via Docker Compose
+	cd polar-deployment/docker && docker compose -f docker-compose.yml -f frontend.yml up -d
+
+frontend-down: ## Stop frontend and observability via Docker Compose
+	cd polar-deployment/docker && docker compose -f docker-compose.yml -f frontend.yml down
+
+compose-up: infra-up services-up frontend-up ## Start infra, services, and frontend via Docker Compose
+
+compose-down: frontend-down services-down infra-down ## Stop frontend, services, and infra via Docker Compose

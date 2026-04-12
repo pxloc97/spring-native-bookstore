@@ -14,8 +14,8 @@
 - `edge-service/`: API gateway for catalog and order APIs.
 - `config-service/`: Spring Cloud Config Server.
 - `config/`: config data consumed by Config Server (per service/profile YAML files).
-- `polar-deployment/docker/`: Docker Compose stack.
-- `polar-deployment/kubernetes/local/`: local Kubernetes manifests (currently Postgres only).
+- `polar-deployment/docker/`: Docker Compose stack split into infra (`docker-compose.yml`) and app services (`service.yml`).
+- `polar-deployment/kubernetes/local/`: local Kubernetes manifests for platform dependencies (Postgres, Kafka, Keycloak, Redis, observability).
 - No monorepo Gradle root build; each service is a standalone Gradle project with its own `./gradlew`.
 
 ## Runtime and Configuration

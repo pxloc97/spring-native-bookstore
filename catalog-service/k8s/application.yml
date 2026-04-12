@@ -4,5 +4,3 @@ spring:
       uri: http://config-service
     datasource:
       url: jdbc:postgresql://polar-postgres-catalog/polardb_catalog
-    rabbitmq:
-      host: polar-rabbitmq

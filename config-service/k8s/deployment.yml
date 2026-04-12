@@ -41,6 +41,8 @@ spec:
               value: "http://tempo:4317"
             - name: OTEL_METRICS_EXPORTER
               value: "none"
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: "polar-kafka:19092"
           volumeMounts:
             - name: config-service-volume
               mountPath: /workspace/config

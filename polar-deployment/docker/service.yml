@@ -1,0 +1,116 @@
+services:
+  catalog-service:
+    image: "pxloc97/catalog-service:0.0.1-SNAPSHOT"
+    container_name: "catalog-service"
+    ports:
+      - 8001:8001
+      - 9001:9001
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8001
+      - BPL_JAVA_NMT_ENABLED=false
+      - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=catalog-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=polar-kafka:19092
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres-catalog:5432/polardb_catalog
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "catalog-service"
+    networks:
+      - polar-network
+
+  order-service:
+    image: "pxloc97/order-service:0.0.1-SNAPSHOT"
+    container_name: "order-service"
+    ports:
+      - 8002:8002
+      - 9002:9002
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8002
+      - BPL_JAVA_NMT_ENABLED=false
+      - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=order-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
+      - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres-order:5432/polardb_order
+      - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres-order:5432/polardb_order
+      - POLAR_CATALOG_SERVICE_URL=http://catalog-service:9001
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=polar-kafka:19092
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "order-service"
+    networks:
+      - polar-network
+
+  dispatcher-service:
+    image: "pxloc97/dispatcher-service:0.0.1-SNAPSHOT"
+    container_name: "dispatcher-service"
+    ports:
+      - 9003:9003
+      - 8003:8003
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8003
+      - BPL_JAVA_NMT_ENABLED=false
+      - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=dispatcher-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=polar-kafka:19092
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "dispatcher-service"
+    networks:
+      - polar-network
+
+  edge-service:
+    image: "pxloc97/edge-service:0.0.1-SNAPSHOT"
+    container_name: "edge-service"
+    ports:
+      - 8000:8000
+      - 9000:9000
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8000
+      - BPL_JAVA_NMT_ENABLED=false
+      - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=edge-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=polar-kafka:19092
+      - CATALOG_SERVICE_URL=http://catalog-service:9001
+      - ORDER_SERVICE_URL=http://order-service:9002
+      - SPA_URL=http://polar-ui:9004
+      - KEYCLOAK_URL=http://host.docker.internal:8080
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "edge-service"
+    networks:
+      - polar-network
+
+networks:
+  polar-network:
+    name: polar-network
