@@ -19,8 +19,6 @@ public class SecurityConfig {
                         exchange ->
                                 exchange.pathMatchers("/actuator/**")
                                         .permitAll()
-                                        .pathMatchers(HttpMethod.GET, "/orders/**")
-                                        .permitAll()
                                         .anyExchange()
                                         .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

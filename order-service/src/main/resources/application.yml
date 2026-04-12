@@ -36,11 +36,6 @@ spring:
           group: ${spring.application.name}
         acceptOrder-out-0:
           destination: order-accepted
-      rabbit:
-        bindings:
-          acceptOrder-out-0:
-            producer:
-              transacted: true
   r2dbc:
     url: r2dbc:postgresql://localhost:5433/polardb_order
     username: user
@@ -53,12 +48,9 @@ spring:
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
     url: jdbc:postgresql://localhost:5433/polardb_order
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: user
-    password: password
-    connection-timeout: 1s
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: localhost:9092
   security:
     oauth2:
       resourceserver:

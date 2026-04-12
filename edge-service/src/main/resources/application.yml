@@ -16,6 +16,8 @@ spring:
       uri: http://localhost:8888
       request-connect-timeout: 2000
       request-read-timeout: 5000
+      username: ${SPRING_CLOUD_CONFIG_USERNAME:user}
+      password: ${SPRING_CLOUD_CONFIG_PASSWORD:password}
       fail-fast: true
       retry:
         max-attempts: 6

@@ -22,6 +22,7 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "polar-keycloak-secret",
+      "directAccessGrantsEnabled": true,
       "redirectUris": [
         "http://localhost:9000/login/oauth2/code/*",
         "http://localhost:9000"
@@ -40,13 +41,16 @@
       "enabled": true,
       "firstName": "Bjorn",
       "lastName": "Vinterberg",
+      "email": "bjorn@example.com",
+      "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "secretData": "{\"value\":\"G2tnvWb5IYT/fX5sJ2BPJABYPmePx6fSTsfq2rguhHBsuH4Bx5C54m0r5ijzP+r3Q/87hsn0B6MJyiXiaRxisQ==\",\"salt\":\"JQUxC+TXJ5z1C1KiExG6TA==\",\"additionalParameters\":{}}",
-          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+          "value": "password",
+          "temporary": false
         }
       ],
+      "requiredActions": [],
       "realmRoles": [ "customer" ]
     },
     {
@@ -54,13 +58,16 @@
       "enabled": true,
       "firstName": "Isabelle",
       "lastName": "Dahl",
+      "email": "isabelle@example.com",
+      "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "secretData": "{\"value\":\"DIsOYpeZ5t6/z4isr/s9xMQAajA2lLn/UCTookY+saAyLO0fsBZ2oyI76Foxze4ONJkrFyIOWXsX95nZzR42gA==\",\"salt\":\"HrTP/yh9Ipe+9oiGa09xQw==\",\"additionalParameters\":{}}",
-          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+          "value": "password",
+          "temporary": false
         }
       ],
+      "requiredActions": [],
       "realmRoles": [ "customer", "employee" ]
     }
   ]

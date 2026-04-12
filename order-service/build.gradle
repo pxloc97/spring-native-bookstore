@@ -1,9 +1,17 @@
+buildscript {
+    dependencies {
+        classpath 'org.postgresql:postgresql:42.7.4'
+        classpath 'org.flywaydb:flyway-database-postgresql:11.14.1'
+    }
+}
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.3'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '6.25.0'
     id 'nu.studer.jooq' version '9.0'
+    id 'org.flywaydb.flyway' version '11.14.1'
 }
 
 group = 'com.locpham.bookstore'
@@ -19,7 +27,7 @@ java {
 sourceSets {
     main {
         java {
-            srcDirs += 'src/main/jooq'
+            srcDirs += 'build/generated-src/jooq'
         }
     }
 }
@@ -82,7 +90,7 @@ dependencies {
     testImplementation 'org.testcontainers:r2dbc'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-rabbit'
+    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
 
     testImplementation("org.springframework.cloud:spring-cloud-stream")
     testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
@@ -116,6 +124,13 @@ bootBuildImage {
     }
 }
 
+flyway {
+    url = 'jdbc:postgresql://localhost:5433/polardb_order'
+    user = 'user'
+    password = 'password'
+    baselineOnMigrate = true
+}
+
 jooq {
     version = '3.19.30'
     configurations {
@@ -143,7 +158,7 @@ jooq {
                     }
                     target {
                         packageName = 'com.locpham.bookstore.orderservice.adapter.out.persistence.jooq.generated'
-                        directory = 'src/main/jooq'
+                        directory = 'build/generated-src/jooq'
                     }
                 }
             }

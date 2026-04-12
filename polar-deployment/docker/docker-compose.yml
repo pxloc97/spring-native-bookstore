@@ -109,7 +109,7 @@ services:
       - config-service
       - catalog-service
       - polar-postgres-order
-      - polar-rabbitmq
+      - polar-kafka
     image: "pxloc97/order-service:0.0.1-SNAPSHOT"
     container_name: "order-service"
     ports:
@@ -128,7 +128,7 @@ services:
       - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres-order:5432/polardb_order
       - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres-order:5432/polardb_order
       - POLAR_CATALOG_SERVICE_URL=http://catalog-service:9001
-      - SPRING_RABBITMQ_HOST=polar-rabbitmq
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=polar-kafka:9092
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
     logging:
       driver: "fluentd"
@@ -142,7 +142,7 @@ services:
       - tempo
       - config-service
       - order-service
-      - polar-rabbitmq
+      - polar-kafka
     image: "pxloc97/dispatcher-service:0.0.1-SNAPSHOT"
     container_name: "dispatcher-service"
     ports:
@@ -159,7 +159,7 @@ services:
       - OTEL_METRICS_EXPORTER=none
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
-      - SPRING_RABBITMQ_HOST=polar-rabbitmq
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=polar-kafka:9092
     logging:
       driver: "fluentd"
       options:
@@ -180,15 +180,20 @@ services:
     container_name: "polar-redis"
     ports:
       - 6379:6379
-  polar-rabbitmq:
-    image: "rabbitmq:3.8-management"
-    container_name: "polar-rabbitmq"
+  polar-kafka:
+    image: bitnami/kafka:3.7
+    container_name: polar-kafka
     ports:
-      - 5672:5672
-      - 15672:15672
+      - 9092:9092
     environment:
-      - RABBITMQ_DEFAULT_USER=user
-      - RABBITMQ_DEFAULT_PASS=password
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@polar-kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://polar-kafka:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
   polar-keycloak:
     image: quay.io/keycloak/keycloak:26.1.3
     container_name: polar-keycloak

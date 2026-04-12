@@ -29,7 +29,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.cloud:spring-cloud-function-context'
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-rabbit'
+    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
     implementation 'org.springframework.retry:spring-retry'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     runtimeOnly "io.opentelemetry.javaagent:opentelemetry-javaagent:${otelAgentVersion}"
