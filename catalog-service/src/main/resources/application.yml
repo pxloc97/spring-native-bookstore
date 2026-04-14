@@ -18,6 +18,8 @@ spring:
     config:
       uri: http://localhost:8888
       request-connect-timeout: 2000
+      username: user
+      password: password
       request-read-timeout: 5000
       fail-fast: true
       retry:
@@ -56,7 +58,7 @@ management:
         enabled: true
       group:
         readiness:
-          include: readinessState,redis,prometheus
+          include: readinessState,db
   metrics:
     tags:
       application: ${spring.application.name}

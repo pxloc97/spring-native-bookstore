@@ -286,27 +286,498 @@ Done when:
 
 ## Testing Plan
 
-## Domain Tests
+### Testing Strategy Overview
 
-- Pure unit tests for order creation and state transitions.
+Follow hexagonal architecture testing pyramid:
+1. **Domain Unit Tests** (fast, no dependencies)
+2. **Application Service Tests** (mock ports, verify orchestration)
+3. **Adapter Integration Tests** (test adapter implementations with real infrastructure)
+4. **End-to-End Tests** (full stack with Testcontainers)
 
-## Application Tests
+---
 
-- Mock outbound ports.
-- Verify orchestration, fallback behavior, and event publishing decisions.
-- Use `StepVerifier`.
+### 1. Domain Layer Tests
 
-## Persistence Tests
+**Goal:** Verify domain logic without any framework dependencies.
 
-- Use Testcontainers PostgreSQL.
-- Run Flyway migrations.
-- Test `JooqOrderRepositoryAdapter` directly.
-- Verify read/write mapping, auditing behavior, and transaction rollback.
+**Test Class:** `OrderTest.java`
 
-## Web Tests
+**Coverage:**
+- ✅ `Order.accepted()` creates order with ACCEPTED status
+- ✅ `Order.rejected()` creates order with REJECTED status
+- ✅ `order.markDispatched()` transitions ACCEPTED → DISPATCHED
+- ✅ `order.markDispatched()` throws exception if not ACCEPTED
+- ✅ Immutability: `markDispatched()` returns new instance
+- ✅ Domain validation rules (quantity > 0, price > 0)
 
-- Use `@WebFluxTest`.
-- Mock inbound use cases only.
+**Test Class:** `BookSnapshotTest.java`
+
+**Coverage:**
+- ✅ BookSnapshot creation with valid data
+- ✅ Immutability verification
+
+**Test Class:** `OrderStatusTest.java`
+
+**Coverage:**
+- ✅ Enum values and transitions
+
+**Example:**
+```java
+class OrderTest {
+    @Test
+    void whenAcceptedThenStatusIsAccepted() {
+        var order = Order.accepted("1234567890", "Book Title", 9.99, 2);
+        assertThat(order.status()).isEqualTo(OrderStatus.ACCEPTED);
+    }
+
+    @Test
+    void whenMarkDispatchedOnAcceptedOrderThenStatusIsDispatched() {
+        var order = Order.accepted("1234567890", "Book Title", 9.99, 2);
+        var dispatched = order.markDispatched();
+        assertThat(dispatched.status()).isEqualTo(OrderStatus.DISPATCHED);
+        assertThat(order.status()).isEqualTo(OrderStatus.ACCEPTED); // immutable
+    }
+
+    @Test
+    void whenMarkDispatchedOnRejectedOrderThenThrowsException() {
+        var order = Order.rejected("1234567890", 2);
+        assertThatThrownBy(() -> order.markDispatched())
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Cannot dispatch order that is not accepted");
+    }
+}
+```
+
+---
+
+### 2. Application Service Tests (Use Case Tests)
+
+**Goal:** Test orchestration logic with mocked ports.
+
+#### 2.1 SubmitOrderServiceTest
+
+**Mocks:**
+- `CatalogBookPort` (mock)
+- `OrderCommandPort` (mock)
+- `OrderEventPublisherPort` (mock)
+
+**Coverage:**
+- ✅ When book exists and available → create ACCEPTED order
+- ✅ When book exists → publish OrderAcceptedEvent
+- ✅ When book not found → create REJECTED order
+- ✅ When book not found → do NOT publish event
+- ✅ When catalog service timeout → create REJECTED order
+- ✅ Verify correct BookSnapshot → Order mapping
+
+**Example:**
+```java
+@ExtendWith(MockitoExtension.class)
+class SubmitOrderServiceTest {
+    @Mock private CatalogBookPort catalogBookPort;
+    @Mock private OrderCommandPort orderCommandPort;
+    @Mock private OrderEventPublisherPort eventPublisher;
+    @InjectMocks private SubmitOrderService service;
+
+    @Test
+    void whenBookExistsThenAcceptOrder() {
+        var isbn = "1234567890";
+        var book = new BookSnapshot(isbn, "Title", 9.99);
+        var command = new SubmitOrderCommand(isbn, 2);
+        
+        given(catalogBookPort.loadBook(isbn)).willReturn(Mono.just(book));
+        given(orderCommandPort.save(any(Order.class)))
+            .willAnswer(inv -> Mono.just(inv.getArgument(0)));
+        given(eventPublisher.publishOrderAccepted(any(Order.class)))
+            .willReturn(Mono.empty());
+
+        StepVerifier.create(service.submitOrder(command))
+            .assertNext(order -> {
+                assertThat(order.status()).isEqualTo(OrderStatus.ACCEPTED);
+                assertThat(order.bookIsbn()).isEqualTo(isbn);
+                assertThat(order.quantity()).isEqualTo(2);
+            })
+            .verifyComplete();
+
+        verify(eventPublisher).publishOrderAccepted(any(Order.class));
+    }
+
+    @Test
+    void whenBookNotFoundThenRejectOrder() {
+        var isbn = "9999999999";
+        var command = new SubmitOrderCommand(isbn, 2);
+        
+        given(catalogBookPort.loadBook(isbn))
+            .willReturn(Mono.empty());
+        given(orderCommandPort.save(any(Order.class)))
+            .willAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(service.submitOrder(command))
+            .assertNext(order -> {
+                assertThat(order.status()).isEqualTo(OrderStatus.REJECTED);
+            })
+            .verifyComplete();
+
+        verify(eventPublisher, never()).publishOrderAccepted(any());
+    }
+}
+```
+
+#### 2.2 GetOrdersServiceTest
+
+**Mocks:**
+- `OrderQueryPort` (mock)
+
+**Coverage:**
+- ✅ Get all orders for user
+- ✅ Empty result when no orders
+- ✅ Filter by userId correctly
+
+#### 2.3 MarkOrderDispatchedServiceTest
+
+**Mocks:**
+- `OrderQueryPort` (mock)
+- `OrderCommandPort` (mock)
+
+**Coverage:**
+- ✅ When order exists and ACCEPTED → mark DISPATCHED
+- ✅ When order not found → throw OrderNotFoundException
+- ✅ When order already DISPATCHED → idempotent (no error)
+- ✅ When order REJECTED → throw IllegalStateException
+
+---
+
+### 3. Adapter Integration Tests
+
+#### 3.1 JooqOrderRepositoryAdapterTest
+
+**Infrastructure:** Testcontainers PostgreSQL + Flyway
+
+**Coverage:**
+- ✅ Save new order → verify ID generated
+- ✅ Save order → read back → verify all fields match
+- ✅ Update order status → verify version increment
+- ✅ Find by ID when exists → return order
+- ✅ Find by ID when not exists → return empty
+- ✅ Find all by userId → return only matching orders
+- ✅ Optimistic locking: concurrent update → throw exception
+- ✅ Auditing: createdBy/lastModifiedBy populated when authenticated
+- ✅ Auditing: null when not authenticated
+- ✅ jOOQ mapping: Order domain ↔ ORDERS table
+
+**Example:**
+```java
+@SpringBootTest(webEnvironment = NONE)
+@Testcontainers
+class JooqOrderRepositoryAdapterTest {
+    @Container
+    static PostgreSQLContainer<?> postgres = 
+        new PostgreSQLContainer<>("postgres:14");
+
+    @Autowired private JooqOrderRepositoryAdapter repository;
+
+    @DynamicPropertySource
+    static void properties(DynamicPropertyRegistry registry) {
+        registry.add("spring.r2dbc.url", () -> r2dbcUrl());
+        registry.add("spring.flyway.url", postgres::getJdbcUrl);
+    }
+
+    @Test
+    void saveAndFindById() {
+        var order = Order.accepted("1234567890", "Book", 9.99, 2);
+        
+        StepVerifier.create(
+            repository.save(order)
+                .flatMap(saved -> repository.findById(saved.id()))
+        )
+        .assertNext(found -> {
+            assertThat(found.bookIsbn()).isEqualTo("1234567890");
+            assertThat(found.status()).isEqualTo(OrderStatus.ACCEPTED);
+        })
+        .verifyComplete();
+    }
+
+    @Test
+    @WithMockUser("testuser")
+    void whenAuthenticatedThenAuditFieldsPopulated() {
+        var order = Order.accepted("1234567890", "Book", 9.99, 2);
+        
+        StepVerifier.create(repository.save(order))
+            .assertNext(saved -> {
+                assertThat(saved.createdBy()).isEqualTo("testuser");
+                assertThat(saved.lastModifiedBy()).isEqualTo("testuser");
+            })
+            .verifyComplete();
+    }
+}
+```
+
+#### 3.2 CatalogWebClientAdapterTest
+
+**Infrastructure:** MockWebServer (OkHttp)
+
+**Coverage:**
+- ✅ When book exists → return BookSnapshot
+- ✅ When 404 → return empty Mono
+- ✅ When timeout → return empty Mono
+- ✅ When 5xx error → retry then return empty
+- ✅ BookDto → BookSnapshot mapping
+
+**Example:**
+```java
+class CatalogWebClientAdapterTest {
+    private MockWebServer mockWebServer;
+    private CatalogWebClientAdapter adapter;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        mockWebServer = new MockWebServer();
+        mockWebServer.start();
+        var webClient = WebClient.builder()
+            .baseUrl(mockWebServer.url("/").toString())
+            .build();
+        adapter = new CatalogWebClientAdapter(webClient);
+    }
+
+    @Test
+    void whenBookExistsThenReturnBookSnapshot() {
+        var mockResponse = new MockResponse()
+            .setHeader("Content-Type", "application/json")
+            .setBody("""
+                {"isbn":"1234567890","title":"Book","price":9.99}
+                """);
+        mockWebServer.enqueue(mockResponse);
+
+        StepVerifier.create(adapter.loadBook("1234567890"))
+            .assertNext(book -> {
+                assertThat(book.isbn()).isEqualTo("1234567890");
+                assertThat(book.title()).isEqualTo("Book");
+                assertThat(book.price()).isEqualTo(9.99);
+            })
+            .verifyComplete();
+    }
+}
+```
+
+#### 3.3 KafkaOrderEventPublisherTest
+
+**Infrastructure:** TestChannelBinder (Spring Cloud Stream Test)
+
+**Coverage:**
+- ✅ Publish OrderAcceptedMessage → verify sent to correct topic
+- ✅ Verify message payload structure
+- ✅ Verify binding name matches configuration
+
+**Example:**
+```java
+@SpringBootTest
+@Import(TestChannelBinderConfiguration.class)
+class KafkaOrderEventPublisherTest {
+    @Autowired private OrderEventPublisherPort publisher;
+    @Autowired private OutputDestination output;
+    @Autowired private ObjectMapper objectMapper;
+
+    @Test
+    void publishOrderAccepted() throws Exception {
+        var order = Order.accepted("1234567890", "Book", 9.99, 2)
+            .withId(123L);
+
+        StepVerifier.create(publisher.publishOrderAccepted(order))
+            .verifyComplete();
+
+        var message = output.receive(1000, "order-accepted");
+        var payload = objectMapper.readValue(
+            message.getPayload(), 
+            OrderAcceptedMessage.class
+        );
+        assertThat(payload.orderId()).isEqualTo(123L);
+    }
+}
+```
+
+#### 3.4 OrderDispatchedConsumerAdapterTest
+
+**Infrastructure:** TestChannelBinder
+
+**Coverage:**
+- ✅ Consume OrderDispatchedMessage → call MarkOrderDispatchedUseCase
+- ✅ Verify correct orderId passed to use case
+- ✅ Error handling when order not found
+
+---
+
+### 4. Web Layer Tests
+
+#### 4.1 OrderControllerWebFluxTest
+
+**Slice:** `@WebFluxTest(OrderController.class)`
+
+**Mocks:**
+- `SubmitOrderUseCase` (mock)
+- `GetOrdersUseCase` (mock)
+- `ReactiveJwtDecoder` (mock)
+
+**Coverage:**
+- ✅ POST /orders with valid token → 200 OK
+- ✅ POST /orders without token → 401 Unauthorized
+- ✅ POST /orders with invalid request → 400 Bad Request
+- ✅ GET /orders → return only current user's orders
+- ✅ GET /orders/{id} → return order if owned by user
+- ✅ GET /orders/{id} → 403 if not owned by user
+- ✅ Request validation (quantity > 0, ISBN format)
+
+**Example:**
+```java
+@WebFluxTest(OrderController.class)
+@Import(SecurityConfig.class)
+class OrderControllerWebFluxTest {
+    @Autowired private WebTestClient webClient;
+    @MockitoBean private SubmitOrderUseCase submitOrderUseCase;
+    @MockitoBean private GetOrdersUseCase getOrdersUseCase;
+    @MockitoBean private ReactiveJwtDecoder jwtDecoder;
+
+    @Test
+    void submitOrderWithValidToken() {
+        var request = new OrderRequest("1234567890", 2);
+        var order = Order.accepted("1234567890", "Book", 9.99, 2);
+        
+        given(jwtDecoder.decode(anyString()))
+            .willReturn(Mono.just(createJwt("user-id")));
+        given(submitOrderUseCase.submitOrder(any()))
+            .willReturn(Mono.just(order));
+
+        webClient.post().uri("/orders")
+            .headers(h -> h.setBearerAuth("token"))
+            .bodyValue(request)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(OrderResponse.class)
+            .value(resp -> {
+                assertThat(resp.status()).isEqualTo("ACCEPTED");
+            });
+    }
+}
+```
+
+---
+
+### 5. End-to-End Integration Tests
+
+#### 5.1 OrderServiceApplicationTest
+
+**Infrastructure:** Full Spring Boot context + Testcontainers (Postgres + Kafka)
+
+**Coverage:**
+- ✅ Submit order → verify saved to DB
+- ✅ Submit order → verify event published to Kafka
+- ✅ Consume dispatched event → verify order status updated
+- ✅ Full flow: submit → dispatch → verify DISPATCHED status
+
+**Example:**
+```java
+@SpringBootTest(webEnvironment = RANDOM_PORT)
+@Import(TestcontainersConfiguration.class)
+class OrderServiceApplicationTest {
+    @Autowired private WebTestClient webClient;
+    @Autowired private OrderQueryPort orderQueryPort;
+    @Autowired private InputDestination input;
+    @Autowired private OutputDestination output;
+
+    @Test
+    void submitOrderEndToEnd() {
+        var request = new OrderRequest("1234567890", 2);
+        
+        // Submit order
+        webClient.post().uri("/orders")
+            .headers(h -> h.setBearerAuth(mockToken()))
+            .bodyValue(request)
+            .exchange()
+            .expectStatus().isOk();
+
+        // Verify event published
+        var message = output.receive(1000, "order-accepted");
+        assertThat(message).isNotNull();
+
+        // Simulate dispatcher consuming and publishing dispatched event
+        var orderId = extractOrderId(message);
+        input.send(MessageBuilder
+            .withPayload(new OrderDispatchedMessage(orderId))
+            .build());
+
+        // Verify order status updated
+        StepVerifier.create(orderQueryPort.findById(orderId))
+            .assertNext(order -> {
+                assertThat(order.status()).isEqualTo(OrderStatus.DISPATCHED);
+            })
+            .verifyComplete();
+    }
+}
+```
+
+---
+
+### 6. Test Configuration
+
+#### TestcontainersConfiguration.java
+
+```java
+@TestConfiguration(proxyBeanMethods = false)
+class TestcontainersConfiguration {
+    @Bean
+    @ServiceConnection
+    PostgreSQLContainer<?> postgresContainer() {
+        return new PostgreSQLContainer<>("postgres:14");
+    }
+}
+```
+
+---
+
+### Test Execution Plan
+
+**Phase 1: Domain Tests**
+- Write `OrderTest`, `BookSnapshotTest`
+- Run: `./gradlew test --tests '*domain*'`
+- Target: 100% domain coverage
+
+**Phase 2: Application Service Tests**
+- Write use case tests with mocked ports
+- Run: `./gradlew test --tests '*application*'`
+- Target: 100% use case orchestration coverage
+
+**Phase 3: Adapter Tests**
+- Write persistence, catalog, messaging adapter tests
+- Run: `./gradlew test --tests '*adapter*'`
+- Target: 80%+ adapter coverage
+
+**Phase 4: Web Tests**
+- Write controller slice tests
+- Run: `./gradlew test --tests '*web*'`
+- Target: 100% controller coverage
+
+**Phase 5: E2E Tests**
+- Write full integration tests
+- Run: `./gradlew test --tests '*ApplicationTest'`
+- Target: Happy path + critical error scenarios
+
+---
+
+### Test Naming Conventions
+
+- **Unit tests:** `<Class>Test.java`
+- **Integration tests:** `<Adapter>IntegrationTest.java`
+- **Web tests:** `<Controller>WebFluxTest.java`
+- **E2E tests:** `<Service>ApplicationTest.java`
+
+### Test Method Naming
+
+- Pattern: `when<Condition>Then<ExpectedResult>`
+- Example: `whenBookNotFoundThenRejectOrder`
+
+### Assertions
+
+- Use AssertJ for fluent assertions
+- Use StepVerifier for reactive flows
+- Prefer `assertThat()` over `assertEquals()`
 
 ## Build And Dependency Tasks
 

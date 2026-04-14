@@ -37,7 +37,7 @@ public class JooqOrderRepositoryAdapter implements OrderCommandPort, OrderQueryP
                 .set(ORDERS.VERSION, record.getVersion())
                 .returning(ORDERS.ID, ORDERS.BOOK_ISBN, ORDERS.BOOK_NAME, ORDERS.BOOK_PRICE,
                         ORDERS.QUANTITY, ORDERS.STATUS, ORDERS.CREATED_DATE, ORDERS.LAST_MODIFIED_DATE,
-                        ORDERS.CREATED_BY, ORDERS.LAST_MODIFIED_BY, ORDERS.VERSION))
+                        ORDERS.VERSION, ORDERS.CREATED_BY, ORDERS.LAST_MODIFIED_BY))
                 .map(JooqOrderMapper::toDomain);
     }
 
