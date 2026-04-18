@@ -10,7 +10,7 @@ public record OrderResponse(
         int quantity,
         String status,
         String createdBy) {
-    
+
     public static OrderResponse fromDomain(Order order) {
         return new OrderResponse(
                 order.id(),

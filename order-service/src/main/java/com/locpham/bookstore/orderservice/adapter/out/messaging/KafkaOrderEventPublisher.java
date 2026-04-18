@@ -21,9 +21,10 @@ public class KafkaOrderEventPublisher implements OrderEventPublisherPort {
 
     @Override
     public Mono<Void> publishOrderAccepted(Order order) {
-        return Mono.fromRunnable(() -> {
-            logger.info("Publishing order accepted event: {}", order.id());
-            streamBridge.send("acceptOrder-out-0", new OrderAcceptedMessage(order.id()));
-        });
+        return Mono.fromRunnable(
+                () -> {
+                    logger.info("Publishing order accepted event: {}", order.id());
+                    streamBridge.send("acceptOrder-out-0", new OrderAcceptedMessage(order.id()));
+                });
     }
 }

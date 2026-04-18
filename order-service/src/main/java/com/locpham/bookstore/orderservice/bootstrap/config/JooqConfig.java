@@ -15,7 +15,8 @@ public class JooqConfig {
 
     @Bean
     public DSLContext dslContext(ConnectionFactory connectionFactory) {
-        return DSL.using(new TransactionAwareConnectionFactoryProxy(connectionFactory), SQLDialect.POSTGRES);
+        return DSL.using(
+                new TransactionAwareConnectionFactoryProxy(connectionFactory), SQLDialect.POSTGRES);
     }
 
     @Bean

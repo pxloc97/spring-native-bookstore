@@ -12,7 +12,7 @@ public class CatalogClientConfig {
     @Bean
     public CatalogWebClientAdapter catalogWebClientAdapter(
             WebClient.Builder webClientBuilder,
-            @Value("${polar.catalogServiceUrl}") String catalogServiceUrl) {
+            @Value("${polar.catalog-service-url}") String catalogServiceUrl) {
         return new CatalogWebClientAdapter(webClientBuilder, catalogServiceUrl);
     }
 }

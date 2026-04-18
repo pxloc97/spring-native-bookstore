@@ -8,17 +8,50 @@ public record Order(
         AuditMetadata audit,
         int version) {
 
-    public static Order build(
-            String isbn,
-            String title,
-            double price,
-            int quantity,
-            OrderStatus orderStatus) {
+    public Order {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+        if (book == null) {
+            throw new IllegalArgumentException("Book must not be null");
+        }
+        if (status == null) {
+            throw new IllegalArgumentException("Status must not be null");
+        }
+        if (audit == null) {
+            throw new IllegalArgumentException("Audit must not be null");
+        }
+        if (version < 0) {
+            throw new IllegalArgumentException("Version must be non-negative");
+        }
+    }
+
+    public static Order createPending(String isbn, String title, double price, int quantity) {
         return new Order(
                 null,
                 new BookInfo(isbn, title, price),
                 quantity,
-                orderStatus,
+                OrderStatus.PENDING,
+                AuditMetadata.init(),
+                0);
+    }
+
+    public static Order createAccepted(String isbn, String title, double price, int quantity) {
+        return new Order(
+                null,
+                new BookInfo(isbn, title, price),
+                quantity,
+                OrderStatus.ACCEPTED,
+                AuditMetadata.init(),
+                0);
+    }
+
+    public static Order createRejected(String isbn, String title, double price, int quantity) {
+        return new Order(
+                null,
+                new BookInfo(isbn, title, price),
+                quantity,
+                OrderStatus.REJECTED,
                 AuditMetadata.init(),
                 0);
     }

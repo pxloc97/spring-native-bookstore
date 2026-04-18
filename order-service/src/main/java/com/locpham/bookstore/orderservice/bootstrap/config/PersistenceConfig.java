@@ -5,5 +5,4 @@ import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 
 @Configuration
 @EnableR2dbcAuditing
-public class PersistenceConfig {
-}
+public class PersistenceConfig {}

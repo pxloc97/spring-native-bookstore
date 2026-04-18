@@ -14,6 +14,8 @@ plugins {
     id 'org.flywaydb.flyway' version '11.14.1'
 }
 
+import org.gradle.api.tasks.PathSensitivity
+
 group = 'com.locpham.bookstore'
 version = '0.0.1-SNAPSHOT'
 description = 'order-service'
@@ -27,7 +29,7 @@ java {
 sourceSets {
     main {
         java {
-            srcDirs += 'build/generated-src/jooq'
+            srcDirs += 'src/main/generated-jooq'
         }
     }
 }
@@ -79,21 +81,20 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'org.postgresql:r2dbc-postgresql'
     runtimeOnly 'org.springframework:spring-jdbc'
-    testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-r2dbc-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-webflux-test'
-    testImplementation 'org.springframework.security:spring-security-test'
+    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
-    testImplementation 'org.testcontainers:testcontainers-postgresql'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.cloud:spring-cloud-stream'
+    testImplementation 'org.springframework.cloud:spring-cloud-stream-test-binder'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:r2dbc'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
 
-    testImplementation("org.springframework.cloud:spring-cloud-stream")
-    testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 }
 
@@ -104,6 +105,7 @@ tasks.named('test') {
 spotless {
     java {
         target 'src/**/*.java'
+        targetExclude 'src/main/generated-jooq/**/*.java'
         googleJavaFormat('1.17.0').aosp()
         importOrder()
         removeUnusedImports()
@@ -135,6 +137,7 @@ jooq {
     version = '3.19.30'
     configurations {
         main {
+            generateSchemaSourceOnCompilation = false
             generationTool {
                 jdbc {
                     driver = 'org.postgresql.Driver'
@@ -158,10 +161,17 @@ jooq {
                     }
                     target {
                         packageName = 'com.locpham.bookstore.orderservice.adapter.out.persistence.jooq.generated'
-                        directory = 'build/generated-src/jooq'
+                        directory = 'src/main/generated-jooq'
                     }
                 }
             }
         }
     }
+}
+
+tasks.named('generateJooq') {
+    dependsOn tasks.named('flywayMigrate')
+    allInputsDeclared = true
+    inputs.files(fileTree('src/main/resources/db/migration')).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file('build.gradle').withPathSensitivity(PathSensitivity.RELATIVE)
 }

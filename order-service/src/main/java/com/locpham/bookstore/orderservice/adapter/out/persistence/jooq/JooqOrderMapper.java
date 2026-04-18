@@ -5,7 +5,6 @@ import com.locpham.bookstore.orderservice.domain.model.AuditMetadata;
 import com.locpham.bookstore.orderservice.domain.model.BookInfo;
 import com.locpham.bookstore.orderservice.domain.model.Order;
 import com.locpham.bookstore.orderservice.domain.model.OrderStatus;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -19,8 +18,12 @@ public class JooqOrderMapper {
                 .setBookPrice((float) order.book().price())
                 .setQuantity(order.quantity())
                 .setStatus(order.status().name())
-                .setCreatedDate(LocalDateTime.ofInstant(order.audit().createdDate(), ZoneId.systemDefault()))
-                .setLastModifiedDate(LocalDateTime.ofInstant(order.audit().lastModifiedDate(), ZoneId.systemDefault()))
+                .setCreatedDate(
+                        LocalDateTime.ofInstant(
+                                order.audit().createdDate(), ZoneId.systemDefault()))
+                .setLastModifiedDate(
+                        LocalDateTime.ofInstant(
+                                order.audit().lastModifiedDate(), ZoneId.systemDefault()))
                 .setCreatedBy(order.audit().createdBy())
                 .setLastModifiedBy(order.audit().lastModifiedBy())
                 .setVersion(order.version());
@@ -33,8 +36,14 @@ public class JooqOrderMapper {
                 record.getQuantity(),
                 OrderStatus.valueOf(record.getStatus()),
                 new AuditMetadata(
-                        record.getCreatedDate() != null ? record.getCreatedDate().atZone(ZoneId.systemDefault()).toInstant() : null,
-                        record.getLastModifiedDate() != null ? record.getLastModifiedDate().atZone(ZoneId.systemDefault()).toInstant() : null,
+                        record.getCreatedDate() != null
+                                ? record.getCreatedDate().atZone(ZoneId.systemDefault()).toInstant()
+                                : null,
+                        record.getLastModifiedDate() != null
+                                ? record.getLastModifiedDate()
+                                        .atZone(ZoneId.systemDefault())
+                                        .toInstant()
+                                : null,
                         record.getCreatedBy(),
                         record.getLastModifiedBy()),
                 record.getVersion());

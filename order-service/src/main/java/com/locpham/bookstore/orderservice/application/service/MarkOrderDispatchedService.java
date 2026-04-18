@@ -15,8 +15,7 @@ public class MarkOrderDispatchedService implements MarkOrderDispatchedUseCase {
     private final OrderCommandPort orderCommandPort;
 
     public MarkOrderDispatchedService(
-            OrderQueryPort orderQueryPort,
-            OrderCommandPort orderCommandPort) {
+            OrderQueryPort orderQueryPort, OrderCommandPort orderCommandPort) {
         this.orderQueryPort = orderQueryPort;
         this.orderCommandPort = orderCommandPort;
     }
@@ -24,7 +23,8 @@ public class MarkOrderDispatchedService implements MarkOrderDispatchedUseCase {
     @Transactional
     @Override
     public Mono<Order> markOrderDispatched(MarkOrderDispatchedCommand command) {
-        return orderQueryPort.findById(command.orderId())
+        return orderQueryPort
+                .findById(command.orderId())
                 .map(Order::markDispatched)
                 .flatMap(orderCommandPort::save);
     }

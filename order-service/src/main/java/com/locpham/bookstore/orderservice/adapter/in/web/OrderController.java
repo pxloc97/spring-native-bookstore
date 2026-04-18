@@ -19,7 +19,8 @@ public class OrderController {
     private final SubmitOrderUseCase submitOrderUseCase;
     private final GetOrdersUseCase getOrdersUseCase;
 
-    public OrderController(SubmitOrderUseCase submitOrderUseCase, GetOrdersUseCase getOrdersUseCase) {
+    public OrderController(
+            SubmitOrderUseCase submitOrderUseCase, GetOrdersUseCase getOrdersUseCase) {
         this.submitOrderUseCase = submitOrderUseCase;
         this.getOrdersUseCase = getOrdersUseCase;
     }

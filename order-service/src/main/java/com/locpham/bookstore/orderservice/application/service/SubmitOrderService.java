@@ -30,27 +30,24 @@ public class SubmitOrderService implements SubmitOrderUseCase {
     @Transactional
     @Override
     public Mono<Order> submitOrder(SubmitOrderCommand command) {
-        return catalogBookPort.loadBook(command.isbn())
+        return catalogBookPort
+                .loadBook(command.isbn())
                 .map(book -> buildAcceptedOrder(book, command.quantity()))
                 .switchIfEmpty(Mono.just(buildRejectedOrder(command.isbn(), command.quantity())))
                 .flatMap(orderCommandPort::save)
-                .doOnNext(order -> {
-                    if (order.status() == OrderStatus.ACCEPTED) {
-                        eventPublisher.publishOrderAccepted(order).subscribe();
-                    }
-                });
+                .doOnNext(
+                        order -> {
+                            if (order.status() == OrderStatus.ACCEPTED) {
+                                eventPublisher.publishOrderAccepted(order).subscribe();
+                            }
+                        });
     }
 
     private Order buildRejectedOrder(String isbn, int quantity) {
-        return Order.build(isbn, null, 0.0, quantity, OrderStatus.REJECTED);
+        return Order.createRejected(isbn, null, 0.0, quantity);
     }
 
     private Order buildAcceptedOrder(BookSnapshot book, int quantity) {
-        return Order.build(
-                book.isbn(),
-                book.title(),
-                book.price(),
-                quantity,
-                OrderStatus.ACCEPTED);
+        return Order.createAccepted(book.isbn(), book.title(), book.price(), quantity);
     }
 }
