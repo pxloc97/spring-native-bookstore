@@ -42,7 +42,7 @@ spotless: $(addprefix spotless-,$(SERVICES)) ## Run Spotless check for all servi
 spotless-apply: $(addprefix spotless-apply-,$(SERVICES)) ## Apply Spotless formatting for all services
 
 build-%: ## Build one service (config|catalog|order|dispatcher|edge)
-	cd $*-service && ./gradlew clean build
+	cd $*-service && ./gradlew build
 
 test-%: ## Test one service (config|catalog|order|dispatcher|edge)
 	cd $*-service && ./gradlew test

@@ -2,6 +2,7 @@
 **/.gradle/
 **/build/
 !**/gradle/wrapper/gradle-wrapper.jar
+.gradle-local/
 
 # Java
 *.class
@@ -18,6 +19,8 @@ hs_err_pid*
 **/.project
 **/.classpath
 **/.factorypath
+.windsurf/
+.specify/
 
 # OS files
 .DS_Store
@@ -30,3 +33,18 @@ Thumbs.db
 
 # Testcontainers and local tooling
 .testcontainers.properties
+
+# Backup files
+*.original.md
+*.backup
+*.bak
+*~
+
+# Compiled output
+**/bin/
+
+# Editor swap and temp files
+*.swp
+*.swo
+*.tmp
+*.temp

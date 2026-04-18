@@ -82,6 +82,14 @@ make skaffold-dev     # Run Skaffold dev loop via profile kind
 make skaffold-delete  # Remove Skaffold-managed resources
 ```
 
+Use `clean` only when you actually need to discard Gradle outputs and caches for a service. Normal local work should prefer incremental builds:
+
+```bash
+cd order-service && ./gradlew build
+cd order-service && ./gradlew test
+cd order-service && ./gradlew generateJooq   # run after Flyway migration changes
+```
+
 ## Service-Level Commands
 
 Examples:
