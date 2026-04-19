@@ -1,5 +1,8 @@
 package com.locpham.bookstore.orderservice.adapter.out.catalog;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,10 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class CatalogWebClientAdapterTest {
 
@@ -23,14 +22,17 @@ class CatalogWebClientAdapterTest {
         mockWebServer.start();
 
         var webClientBuilder = WebClient.builder();
-        catalogWebClientAdapter = new CatalogWebClientAdapter(webClientBuilder, mockWebServer.url("/").toString());
+        catalogWebClientAdapter =
+                new CatalogWebClientAdapter(webClientBuilder, mockWebServer.url("/").toString());
     }
 
     @Test
     void loadBook() {
-        var mockResponse = new MockResponse()
-                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody("""
+        var mockResponse =
+                new MockResponse()
+                        .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .setBody(
+                                """
                        {
                             "isbn": "1234567890",
                             "title": "Book",
@@ -38,9 +40,7 @@ class CatalogWebClientAdapterTest {
                         }
                         """);
 
-        mockWebServer.enqueue(
-                mockResponse
-        );
+        mockWebServer.enqueue(mockResponse);
 
         var book = catalogWebClientAdapter.loadBook("1234567890").block();
         assertEquals("1234567890", book.isbn());
@@ -50,9 +50,10 @@ class CatalogWebClientAdapterTest {
 
     @Test
     void loadBookNotFound() {
-        var mockResponse = new MockResponse()
-                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody("");
+        var mockResponse =
+                new MockResponse()
+                        .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .setBody("");
 
         mockWebServer.enqueue(mockResponse);
 
@@ -62,15 +63,15 @@ class CatalogWebClientAdapterTest {
 
     @Test
     void loadBookError() {
-        var mockResponse = new MockResponse()
-                .setResponseCode(500)
-                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody("");
+        var mockResponse =
+                new MockResponse()
+                        .setResponseCode(500)
+                        .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .setBody("");
 
         mockWebServer.enqueue(mockResponse);
 
-        var book = catalogWebClientAdapter.loadBook(
-                "1234567890").block();
+        var book = catalogWebClientAdapter.loadBook("1234567890").block();
         assertNull(book);
     }
 }

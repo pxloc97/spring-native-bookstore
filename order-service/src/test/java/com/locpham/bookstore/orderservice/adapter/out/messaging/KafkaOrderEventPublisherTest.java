@@ -1,5 +1,7 @@
 package com.locpham.bookstore.orderservice.adapter.out.messaging;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.locpham.bookstore.orderservice.TestcontainersConfiguration;
 import com.locpham.bookstore.orderservice.application.port.out.OrderEventPublisherPort;
@@ -13,8 +15,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @Import({TestChannelBinderConfiguration.class, TestcontainersConfiguration.class})

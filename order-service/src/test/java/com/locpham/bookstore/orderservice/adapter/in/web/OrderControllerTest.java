@@ -1,14 +1,21 @@
 package com.locpham.bookstore.orderservice.adapter.in.web;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
+
 import com.locpham.bookstore.orderservice.TestcontainersConfiguration;
 import com.locpham.bookstore.orderservice.adapter.in.web.dto.OrderRequest;
 import com.locpham.bookstore.orderservice.application.port.in.GetOrdersUseCase;
 import com.locpham.bookstore.orderservice.application.port.in.SubmitOrderUseCase;
 import com.locpham.bookstore.orderservice.bootstrap.config.SecurityConfig;
 import com.locpham.bookstore.orderservice.domain.model.Order;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -17,30 +24,22 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.context.ApplicationContext;
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({SecurityConfig.class, TestcontainersConfiguration.class})
 @Testcontainers
 class OrderControllerTest {
 
-    @Autowired
-    private ApplicationContext context;
+    @Autowired private ApplicationContext context;
 
     private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
-        this.webTestClient = WebTestClient.bindToApplicationContext(context)
-                .apply(springSecurity())
-                .configureClient()
-                .build();
+        this.webTestClient =
+                WebTestClient.bindToApplicationContext(context)
+                        .apply(springSecurity())
+                        .configureClient()
+                        .build();
     }
 
     @MockitoBean private SubmitOrderUseCase submitOrderUseCase;
@@ -57,9 +56,11 @@ class OrderControllerTest {
                 .get()
                 .uri("/orders")
                 .exchange()
-                .expectStatus().isOk()
+                .expectStatus()
+                .isOk()
                 .expectBody()
-                .jsonPath("$[0].isbn").isEqualTo("1234567890");
+                .jsonPath("$[0].isbn")
+                .isEqualTo("1234567890");
     }
 
     @Test
@@ -75,9 +76,11 @@ class OrderControllerTest {
                 .uri("/orders")
                 .bodyValue(orderRequest)
                 .exchange()
-                .expectStatus().isOk()
+                .expectStatus()
+                .isOk()
                 .expectBody()
-                .jsonPath("$.isbn").isEqualTo("0987654321");
+                .jsonPath("$.isbn")
+                .isEqualTo("0987654321");
     }
 
     @Test
@@ -89,7 +92,8 @@ class OrderControllerTest {
                 .uri("/orders")
                 .bodyValue(orderRequest)
                 .exchange()
-                .expectStatus().isUnauthorized();
+                .expectStatus()
+                .isUnauthorized();
     }
 
     @Test
@@ -102,6 +106,7 @@ class OrderControllerTest {
                 .uri("/orders")
                 .bodyValue(invalidOrderRequest)
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus()
+                .isBadRequest();
     }
 }

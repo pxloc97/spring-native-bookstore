@@ -11,7 +11,9 @@ import reactor.core.publisher.Mono;
 public class CatalogWebClientAdapter implements CatalogBookPort {
     private final WebClient webClient;
 
-    public CatalogWebClientAdapter(WebClient.Builder webClientBuilder,  @Value("${polar.catalog-service-url}")String catalogServiceUrl) {
+    public CatalogWebClientAdapter(
+            WebClient.Builder webClientBuilder,
+            @Value("${polar.catalog-service-url}") String catalogServiceUrl) {
         this.webClient = webClientBuilder.baseUrl(catalogServiceUrl).build();
     }
 
@@ -29,5 +31,4 @@ public class CatalogWebClientAdapter implements CatalogBookPort {
     private BookSnapshot toBookSnapshot(BookDto dto) {
         return new BookSnapshot(dto.isbn(), dto.title(), dto.price());
     }
-
 }

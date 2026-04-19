@@ -1,11 +1,16 @@
 package com.locpham.bookstore.orderservice;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.locpham.bookstore.orderservice.adapter.in.messaging.OrderDispatchedMessage;
 import com.locpham.bookstore.orderservice.adapter.in.web.dto.OrderRequest;
 import com.locpham.bookstore.orderservice.adapter.out.messaging.OrderAcceptedMessage;
-import com.locpham.bookstore.orderservice.adapter.in.messaging.OrderDispatchedMessage;
 import com.locpham.bookstore.orderservice.application.port.out.OrderQueryPort;
 import com.locpham.bookstore.orderservice.domain.model.OrderStatus;
+import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
@@ -28,12 +33,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.test.StepVerifier;
-
-import java.io.IOException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({TestcontainersConfiguration.class, TestChannelBinderConfiguration.class})
@@ -70,19 +69,22 @@ class OrderServiceApplicationTests {
     @BeforeEach
     void setUp() {
         this.objectMapper = new ObjectMapper();
-        this.webClient = WebTestClient.bindToApplicationContext(context)
-                .apply(springSecurity())
-                .configureClient()
-                .build();
+        this.webClient =
+                WebTestClient.bindToApplicationContext(context)
+                        .apply(springSecurity())
+                        .configureClient()
+                        .build();
     }
 
     @Test
     void submitOrderEndToEnd() throws Exception {
         var request = new OrderRequest("1234567890", 2);
 
-        var mockResponse = new MockResponse()
-                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody("""
+        var mockResponse =
+                new MockResponse()
+                        .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .setBody(
+                                """
                        {
                             "isbn": "1234567890",
                             "title": "Book",
@@ -92,34 +94,40 @@ class OrderServiceApplicationTests {
         mockWebServer.enqueue(mockResponse);
 
         // Submit order
-        webClient.mutateWith(mockJwt().jwt(jwt -> jwt.subject("test-user")))
-                .post().uri("/orders")
+        webClient
+                .mutateWith(mockJwt().jwt(jwt -> jwt.subject("test-user")))
+                .post()
+                .uri("/orders")
                 .bodyValue(request)
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus()
+                .isOk();
 
         // Verify event published
         var message = output.receive(5000, "acceptOrder-out-0");
         assertThat(message).isNotNull();
 
         // Simulate dispatcher consuming and publishing dispatched event
-        var orderAcceptedMessage = objectMapper.readValue(message.getPayload(), OrderAcceptedMessage.class);
+        var orderAcceptedMessage =
+                objectMapper.readValue(message.getPayload(), OrderAcceptedMessage.class);
         var orderId = orderAcceptedMessage.orderId();
 
         var jsonPayload = objectMapper.writeValueAsBytes(new OrderDispatchedMessage(orderId));
-        input.send(MessageBuilder
-                .withPayload(jsonPayload)
-                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build(), "dispatchOrder-in-0");
+        input.send(
+                MessageBuilder.withPayload(jsonPayload)
+                        .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .build(),
+                "dispatchOrder-in-0");
 
         // Verify order status updated (need to give it a brief moment via reactive test)
         // give it 2 seconds max for the message to be consumed by the stream bridge
         Thread.sleep(2000);
-        
+
         StepVerifier.create(orderQueryPort.findById(orderId))
-                .assertNext(order -> {
-                    assertThat(order.status()).isEqualTo(OrderStatus.DISPATCHED);
-                })
+                .assertNext(
+                        order -> {
+                            assertThat(order.status()).isEqualTo(OrderStatus.DISPATCHED);
+                        })
                 .verifyComplete();
     }
 }

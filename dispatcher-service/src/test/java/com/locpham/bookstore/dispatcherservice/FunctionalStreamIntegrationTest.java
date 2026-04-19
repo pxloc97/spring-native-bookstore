@@ -1,7 +1,5 @@
 package com.locpham.bookstore.dispatcherservice;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 import com.locpham.bookstore.dispatcherservice.config.TestObjectMapperConfiguration;
 import com.locpham.bookstore.dispatcherservice.message.OrderAcceptedMessage;
 import com.locpham.bookstore.dispatcherservice.message.OrderDispatchedMessage;
