@@ -59,7 +59,7 @@ class OrderControllerTest {
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$[0].isbn")
+                .jsonPath("$[0].book.isbn")
                 .isEqualTo("1234567890");
     }
 
@@ -79,7 +79,7 @@ class OrderControllerTest {
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("$.isbn")
+                .jsonPath("$.book.isbn")
                 .isEqualTo("0987654321");
     }
 

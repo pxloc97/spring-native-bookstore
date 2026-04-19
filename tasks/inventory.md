@@ -16,7 +16,7 @@ Stack mirrors `order-service`: **Spring WebFlux + R2DBC + Kafka + Flyway**, reac
 
 - Architecture style: Hexagonal (Ports & Adapters), same package structure as `order-service`.
 - Reactive model: WebFlux + R2DBC — keeps parity with reference architecture; appropriate for high-throughput, contention-prone inventory.
-- Persistence: R2DBC + PostgreSQL; no Spring Data repositories in production path (jOOQ considered; R2DBC repository acceptable at adapter boundary only).
+- Persistence: R2DBC + PostgreSQL + **jOOQ** — `DSLContext` used in persistence adapters (same as `order-service`); no Spring Data repositories in the production path.
 - Concurrency: Optimistic Locking via `version` column on `inventory` table.
 - Idempotency: unique constraint `(order_id, isbn)` on `reservation` table.
 - Messaging: Kafka — consume `order-events`, publish `inventory-events`.
@@ -101,14 +101,18 @@ com.locpham.bookstore.inventoryservice
 │   │       └── OrderEventConsumer.java
 │   └── out
 │       ├── persistence
-│       │   ├── R2dbcInventoryRepository.java
-│       │   ├── R2dbcReservationRepository.java
-│       │   ├── InventoryPersistenceAdapter.java
-│       │   └── ReservationPersistenceAdapter.java
+│       │   ├── jooq
+│       │   │   ├── generated/                         ← code-gen output (gitignored)
+│       │   │   ├── JooqInventoryRepositoryImpl.java   ← implements InventoryPort
+│       │   │   ├── JooqReservationRepositoryImpl.java ← implements ReservationPort
+│       │   │   ├── JooqInventoryMapper.java
+│       │   │   └── JooqReservationMapper.java
 │       └── messaging
 │           └── KafkaInventoryEventPublisher.java
 └── bootstrap
-    └── InventoryServiceApplication.java
+    ├── InventoryServiceApplication.java
+    └── config
+        └── JooqConfig.java
 ```
 
 ---
@@ -228,28 +232,108 @@ If `OrderEventConsumer` receives the same `order.created` twice:
 ## `build.gradle` Dependencies (additions over base Spring Boot)
 
 ```groovy
+plugins {
+    id 'nu.studer.jooq' version '9.0'
+    id 'org.flywaydb.flyway' version '11.14.1'
+    // ... spring boot, spotless, etc.
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs += 'src/main/generated-jooq'
+        }
+    }
+}
+
+configurations {
+    jooqGenerator
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-r2dbc'
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
-    implementation 'org.postgresql:r2dbc-postgresql'
-    implementation 'org.flywaydb:flyway-core'
-    implementation 'org.flywaydb:flyway-database-postgresql'
-    implementation 'org.springframework.kafka:spring-kafka'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
+    implementation 'org.springframework:spring-jdbc'       // required by jOOQ reactive bridge
+    implementation 'org.jooq:jooq:3.19.30'
 
+    jooqGenerator 'org.postgresql:postgresql'
+
+    runtimeOnly 'org.flywaydb:flyway-core'
     runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'org.postgresql:r2dbc-postgresql'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:r2dbc'
     testImplementation 'org.testcontainers:kafka'
-    testImplementation 'io.projectreactor:reactor-test'
-    testImplementation 'org.springframework.kafka:spring-kafka-test'
+    testImplementation 'org.springframework.cloud:spring-cloud-stream'
+    testImplementation 'org.springframework.cloud:spring-cloud-stream-test-binder'
 }
 ```
 
-Spotless plugin config identical to `order-service`.
+### jOOQ code generation
+
+```groovy
+flyway {
+    url = 'jdbc:postgresql://localhost:5434/polardb_inventory'
+    user = 'user'
+    password = 'password'
+    baselineOnMigrate = true
+}
+
+jooq {
+    version = '3.19.30'
+    configurations {
+        main {
+            generateSchemaSourceOnCompilation = false
+            generationTool {
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5434/polardb_inventory'
+                    user = 'user'
+                    password = 'password'
+                }
+                generator {
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        includes = 'public.inventory|public.reservation'
+                        inputSchema = 'public'
+                    }
+                    generate {
+                        deprecated = false
+                        records = true
+                        pojos = false
+                        fluentSetters = true
+                        javaTimeTypes = true
+                    }
+                    target {
+                        packageName = 'com.locpham.bookstore.inventoryservice.adapter.out.persistence.jooq.generated'
+                        directory = 'src/main/generated-jooq'
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.named('generateJooq') {
+    dependsOn tasks.named('flywayMigrate')
+    allInputsDeclared = true
+    inputs.files(fileTree('src/main/resources/db/migration')).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file('build.gradle').withPathSensitivity(PathSensitivity.RELATIVE)
+}
+```
+
+Spotless plugin config identical to `order-service` (exclude `src/main/generated-jooq/**`).
 
 ---
 
@@ -284,17 +368,21 @@ Spotless plugin config identical to `order-service`.
 - `ReleaseStockServiceTest`: test idempotent no-op when no RESERVED records found.
 - → **verify:** tests green, zero DB/Kafka startup required.
 
-### Step 3 — Persistence Adapter Integration Tests (Testcontainers + R2DBC)
+### Step 3 — jOOQ Code Generation
+- Run Flyway migrations against a local/Testcontainer Postgres to produce generated sources.
+- → **verify:** `./gradlew generateJooq` succeeds; `generated/tables/Inventory.java` + `generated/tables/Reservation.java` present.
+
+### Step 4 — Persistence Adapter Integration Tests (Testcontainers + R2DBC + jOOQ)
 - Bring up PostgreSQL via Testcontainers.
-- `InventoryPersistenceAdapterTest`: test optimistic locking conflict raises exception.
-- `ReservationPersistenceAdapterTest`: test unique constraint violation on duplicate `(order_id, isbn)`.
+- `JooqInventoryRepositoryImplTest`: test `findByIsbn`, `findAllByIsbn`, `save` with optimistic locking (`version` conflict raises `OptimisticLockingFailureException`).
+- `JooqReservationRepositoryImplTest`: test unique constraint violation on duplicate `(order_id, isbn)` → `DataIntegrityViolationException`.
 - → **verify:** `./gradlew test -Dspring.profiles.active=integration` green.
 
-### Step 4 — Web Slice Tests
+### Step 5 — Web Slice Tests
 - `InventoryControllerTest`: `@WebFluxTest`, mock use cases. Verify request validation and response mapping.
 - → **verify:** tests green without Kafka or DB.
 
-### Step 5 — Messaging Integration Tests (Testcontainers + Kafka)
+### Step 6 — Messaging Integration Tests (Testcontainers + Kafka)
 - `OrderEventConsumerTest`: publish `order.created` to Kafka testcontainer, assert `inventory-events` receives `inventory.reserved`.
 - Test duplicate `order.created` — assert no double-decrement.
 - → **verify:** tests green with Kafka + Postgres testcontainers.
@@ -316,12 +404,14 @@ Spotless plugin config identical to `order-service`.
 ## Implementation Order
 
 ```
-1. Scaffold service — build.gradle, Application class, Flyway migrations   → verify: bootRun starts
-2. Domain model — InventoryItem, Reservation, exceptions                   → verify: domain unit tests green
-3. Application ports + service stubs                                        → verify: app service tests green (mocked ports)
-4. Persistence adapter — R2DBC + optimistic locking                        → verify: persistence integration tests green
-5. Web adapter — InventoryController                                        → verify: web slice tests green
-6. Messaging inbound — OrderEventConsumer                                   → verify: consumer integration test green
-7. Messaging outbound — KafkaInventoryEventPublisher                       → verify: full messaging flow test green
-8. Wire everything in bootstrap + config                                    → verify: full @SpringBootTest + Testcontainers green
+1. Scaffold service — build.gradle (jooq plugin + deps), Application class, Flyway migrations   → verify: bootRun starts
+2. Domain model — InventoryItem, Reservation, exceptions                                         → verify: domain unit tests green
+3. Application ports + service stubs                                                              → verify: app service tests green (mocked ports)
+4. jOOQ code generation — run generateJooq, commit generated sources                             → verify: generated/tables/Inventory.java + Reservation.java present
+5. Persistence adapter — JooqInventoryRepositoryImpl + JooqReservationRepositoryImpl + mappers   → verify: persistence integration tests green
+6. Bootstrap JooqConfig — DSLContext + ReactiveTransactionManager beans                          → verify: context loads
+7. Web adapter — InventoryController                                                              → verify: web slice tests green
+8. Messaging inbound — OrderEventConsumer                                                         → verify: consumer integration test green
+9. Messaging outbound — KafkaInventoryEventPublisher                                              → verify: full messaging flow test green
+10. Wire everything in bootstrap + config                                                          → verify: full @SpringBootTest + Testcontainers green
 ```
