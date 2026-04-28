@@ -77,12 +77,12 @@ kubectl wait --context "$KUBE_CONTEXT" \
   --for=condition=available deployment/polar-redis \
   --timeout=180s
 
-printf "\n📦 Deploying RabbitMQ...\n"
-kubectl apply --context "$KUBE_CONTEXT" -f polar-deployment/kubernetes/local/rabbitmq.yml
+printf "\n📦 Deploying Kafka...\n"
+kubectl apply --context "$KUBE_CONTEXT" -f polar-deployment/kubernetes/local/kafka.yml
 
-printf "\n⌛ Waiting for RabbitMQ to be ready...\n"
+printf "\n⌛ Waiting for Kafka to be ready...\n"
 kubectl wait --context "$KUBE_CONTEXT" \
-  --for=condition=available deployment/polar-rabbitmq \
+  --for=condition=available deployment/polar-kafka \
   --timeout=180s
 
 printf "\n📦 Deploying observability stack...\n"

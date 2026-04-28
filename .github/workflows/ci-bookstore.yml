@@ -23,3 +23,7 @@ jobs:
   dispatcher-service-build:
     uses: ./.github/workflows/ci-dispatcher-pipeline.yml
     secrets: inherit
+
+  inventory-service-build:
+    uses: ./.github/workflows/ci-inventory-pipeline.yml
+    secrets: inherit

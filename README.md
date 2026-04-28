@@ -8,6 +8,15 @@ Spring Native Bookstore is a multi-service Spring Boot project with a central Co
 - `edge-service` (port `9000`): Spring Cloud Gateway for routing, resilience, and rate limiting
 - `catalog-service` (port `9001`): Catalog REST API backed by PostgreSQL + Flyway + Spring Data JDBC
 - `order-service` (port `9002`): Order API backed by PostgreSQL + Flyway + Spring Data R2DBC/WebFlux
+- `inventory-service` (port `9004`): Inventory service for reserving/releasing stock, backed by PostgreSQL + Flyway + Spring Data R2DBC/WebFlux
+- `dispatcher-service` (port `9003`): Dispatcher service consuming order events and producing dispatch events via Spring Cloud Stream (Kafka)
+
+## Platform Dependencies
+
+- Kafka (Apache Kafka): Spring Cloud Stream binder used by `order-service`, `inventory-service`, `dispatcher-service` (and Config bus if enabled)
+- PostgreSQL (per service): separate databases for catalog/order/inventory
+- Keycloak: OAuth2/OIDC identity provider (resource server integration in `edge-service`/`order-service`)
+- Observability stack: Prometheus + Grafana + Tempo + Loki (logs shipped via Fluent Bit)
 
 ## Tech Stack
 
@@ -23,10 +32,13 @@ Spring Native Bookstore is a multi-service Spring Boot project with a central Co
 ```text
 .
 |- catalog-service/
+|- dispatcher-service/
 |- edge-service/
 |- config-service/
+|- inventory-service/
 |- order-service/
 |- config/
+|- specs/
 `- polar-deployment/
 ```
 
@@ -52,6 +64,8 @@ Spring Native Bookstore is a multi-service Spring Boot project with a central Co
    ```bash
    make run-catalog
    make run-order
+   make run-inventory
+   make run-dispatcher
    make run-edge
    ```
 
@@ -108,6 +122,15 @@ make build-edge
 make test-config
 make clean-order
 make run-catalog
+```
+
+Additional services also follow the same pattern:
+
+```bash
+make build-inventory
+make test-dispatcher
+make run-inventory
+make run-dispatcher
 ```
 
 ## Local Kubernetes Flow
@@ -195,9 +218,31 @@ curl http://localhost:8888/catalog-service/default
 ## Kubernetes and Skaffold
 
 - kind cluster config: `polar-deployment/kubernetes/local/kind-config.yml`
-- Local platform manifests: `polar-deployment/kubernetes/local/postgresql.yml`, `polar-deployment/kubernetes/local/postgresql-order.yml`, `polar-deployment/kubernetes/local/redis.yml`
+- Local platform manifests: `polar-deployment/kubernetes/local/postgresql.yml`, `polar-deployment/kubernetes/local/postgresql-order.yml`, `polar-deployment/kubernetes/local/postgresql-inventory.yml`, `polar-deployment/kubernetes/local/redis.yml`, `polar-deployment/kubernetes/local/kafka.yml`
 - Edge Kubernetes manifests (same layout as other services): `edge-service/k8s/deployment.yml`, `edge-service/k8s/service.yml`, `edge-service/k8s/ingress.yml`
 - Root Skaffold config: `skaffold.yml` (kind profile targets `kind-bookstore`)
+
+## Local Ports (Defaults)
+
+Services:
+
+- config-service: `8888`
+- edge-service: `9000`
+- catalog-service: `9001`
+- order-service: `9002`
+- dispatcher-service: `9003`
+- inventory-service: `9004`
+
+Dependencies (Docker Compose defaults under `polar-deployment/docker/docker-compose.yml`):
+
+- Kafka: `9092`
+- PostgreSQL: catalog `5432`, order `5433`, inventory `5434`
+- Keycloak: `8080`
+- Grafana: `3000`
+- Prometheus: `9090`
+- Loki: `3100`
+- Tempo (OTLP gRPC): `4317`
+- Fluent Bit: `24224`
 
 ## CI/CD
 

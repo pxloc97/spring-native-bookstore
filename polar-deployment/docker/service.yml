@@ -60,7 +60,7 @@ services:
     container_name: "inventory-service"
     ports:
       - 8005:8005
-      - 9005:9003
+      - 9004:9004
     environment:
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=8005

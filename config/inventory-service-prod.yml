@@ -1,6 +1,8 @@
+server:
+  port: 9004
+
 spring:
   cloud:
     config:
       bus:
         enabled: true
-

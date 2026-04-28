@@ -3,5 +3,5 @@ spring:
     config:
       bus:
         enabled: true
-  rabbitmq:
-    host: polar-rabbitmq
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:polar-kafka:19092}

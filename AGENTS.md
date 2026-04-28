@@ -174,41 +174,16 @@ Before completing any code modification task, verify:
 <claude-mem-context>
 # Memory Context
 
-# [spring-native-bookstore] recent context, 2026-04-28 5:15pm GMT+9
+# [spring-native-bookstore] recent context, 2026-04-28 6:05pm GMT+9
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (19,986t read) | 0t work
+Stats: 50 obs (20,995t read) | 0t work
 
 ### Apr 28, 2026
-132 4:14p 🔴 Fixed KafkaOrderEventsPublisherTest to exclude R2DBC auto-configuration
-133 4:15p 🔴 Successfully fixed KafkaOrderEventsPublisherTest database dependency issue
-134 " 🔴 Applied R2DBC exclusion fix to InventoryDecisionConsumerAdapterTest
-135 " 🔴 Successfully fixed InventoryDecisionConsumerAdapterTest database dependency
-136 " 🔄 Re-applied ProcessInventoryDecisionServiceTest refactoring changes
-137 4:16p 🔄 Successfully re-applied ProcessInventoryDecisionServiceTest refactoring
-138 " 🔵 Tests still failing despite R2DBC exclusion fixes being applied
-139 " 🔴 Re-applied R2DBC exclusion fix to KafkaOrderEventsPublisherTest
-140 " 🔴 Re-applied R2DBC exclusion configuration to KafkaOrderEventsPublisherTest
-152 " 🔵 Located spring-boot-autoconfigure JAR to resolve auto-configuration class import errors
-141 4:17p 🔴 Re-applied R2DBC exclusion fix to InventoryDecisionConsumerAdapterTest
-142 " 🔴 Successfully re-applied database exclusion to InventoryDecisionConsumerAdapterTest
-143 " 🔵 Tests still failing after R2DBC exclusion patches due to Gradle build cache
-144 " 🔄 Refactored KafkaOrderEventsPublisherTest to use nested TestApp configuration
-145 " 🔄 Successfully refactored KafkaOrderEventsPublisherTest with nested TestApp configuration
-146 4:18p 🔄 Re-applied nested TestApp configuration to KafkaOrderEventsPublisherTest
-147 " 🔄 Successfully re-applied type-safe TestApp configuration to KafkaOrderEventsPublisherTest
-148 " 🔄 Refactored InventoryDecisionConsumerAdapterTest with nested TestApp configuration
-149 4:19p 🔄 Successfully applied type-safe TestApp configuration to InventoryDecisionConsumerAdapterTest
-150 " 🔵 Test compilation failed due to missing auto-configuration class imports
-151 " 🔵 Located spring-boot-autoconfigure JAR in Gradle cache
-153 4:21p 🔵 Test compilation blocking due to incorrect auto-configuration class package names
-154 4:22p 🔵 Relocated spring-boot-autoconfigure JAR for auto-configuration class verification
-155 " 🔵 Auto-configuration classes not found in Spring Boot 4.0.3 JAR
-156 4:23p 🔵 R2DBC and Flyway auto-configuration classes not found in Spring Boot 4.0.3
-157 " 🔵 ConnectionFactoryOptionsInitializer not found in Spring Boot autoconfigure JAR
+157 4:23p 🔵 ConnectionFactoryOptionsInitializer not found in Spring Boot autoconfigure JAR
 158 " 🔵 ConnectionFactoryOptionsInitializer not found in Gradle cache
 159 " 🔵 Testcontainers disabledWithoutDocker Configuration Explained
 S2 Explained @Testcontainers(disabledWithoutDocker = true) purpose and completed final code formatting fixes for order-service tests (Apr 28, 4:23 PM)
@@ -237,4 +212,29 @@ S4 Removed @Testcontainers disabledWithoutDocker parameter from all test classes
 180 " 🔵 Inventory-Service Tests Fail with NullPointerException After Testcontainers Upgrade
 179 4:49p 🔴 All Order-Service Tests Pass After Removing Invalid Test Binder Configuration
 181 4:50p 🔵 Gradle test execution blocked by network permission error
+182 5:01p 🔵 Gradle network permission error rooted in Java SocketException
+183 5:15p 🔵 Gradle network permission issue resolved with elevated permissions
+184 " 🔵 OrderEventConsumerTest duplicate handling test fails with AssertionError
+185 5:16p 🔴 Order-service test binding configuration fixed
+186 5:17p 🔴 Inventory-service test flakiness resolved with output channel draining
+187 5:34p 🔵 Infrastructure mismatch: Services use Kafka but local K8s deployment configures RabbitMQ
+188 " 🔵 Kafka manifest exists but RabbitMQ reference remains in skaffold.yml
+189 " 🔵 Kubernetes service deployments correctly configured for Kafka
+190 " ✅ Skaffold configuration updated to use Kafka instead of RabbitMQ
+191 " 🔵 All three Kafka-using services confirmed in Kubernetes deployments
+192 5:35p 🔵 PostgreSQL databases use separate Kubernetes deployments for each service
+193 " ✅ Infrastructure migration from RabbitMQ to Kafka completed across all configuration files
+194 " ✅ Kafka deployment integrated into cluster creation script
+195 " ✅ README.md documentation updated for inventory-service and dispatcher-service
+196 5:37p ✅ inventory-service port changed from 9003 to 9004 to resolve port conflict
+197 5:38p ✅ Docker Compose configuration updated for inventory-service port change
+198 " 🔴 OrderEventConsumerTest refactored to verify state-level idempotency instead of event publication behavior
+200 5:55p 🔴 OrderEventConsumerTest updated to use Spring Cloud Stream binding names instead of destination names
+202 " 🔵 InputDestination.getChannelByName() returns null for binding names
+201 5:56p 🔵 Spring Cloud Stream Test Binder binding name usage causes NullPointerException
+204 5:57p 🔴 OrderEventConsumerTest passes after reverting to destination names and refactoring for state-level idempotency
+205 " 🔴 OrderEventConsumerTest fully passes with both tests succeeding after destination name revert and test structure improvements
+203 5:58p 🔴 OrderEventConsumerTest reverted to use destination names after binding names caused NullPointerException
+206 6:02p 🔵 Full inventory-service test suite shows 1 failure out of 31 tests
+207 " 🔵 OrderEventConsumerTest fails in full suite but passes in isolation due to test interference
 </claude-mem-context>

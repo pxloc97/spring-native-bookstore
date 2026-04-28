@@ -28,7 +28,7 @@ manifests:
   rawYaml:
     - config-service/k8s/deployment.yml
     - config-service/k8s/service.yml
-    - polar-deployment/kubernetes/local/rabbitmq.yml
+    - polar-deployment/kubernetes/local/kafka.yml
     - edge-service/k8s/deployment.yml
     - edge-service/k8s/service.yml
     - edge-service/k8s/ingress.yml

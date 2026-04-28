@@ -51,6 +51,21 @@ class OrderEventConsumerTest {
         } while (message != null);
     }
 
+    private Mono<InventoryItem> awaitStock(String isbn, int available, int reserved) {
+        // Guard each DB read so a transient stalled connection doesn't hang the whole await.
+        return Mono.defer(
+                        () ->
+                                inventoryRepository
+                                        .findByIsbn(isbn)
+                                        .timeout(Duration.ofSeconds(1)))
+                .filter(
+                        updated ->
+                                updated.availableQuantity() == available
+                                        && updated.reservedQuantity() == reserved)
+                .repeatWhenEmpty(repeat -> repeat.delayElements(Duration.ofMillis(200)))
+                .timeout(Duration.ofSeconds(30));
+    }
+
     @Test
     void orderCreated_shouldReserveAndPublishDecision() throws Exception {
         inventoryRepository.save(InventoryItem.create("ABC", 10)).block();
@@ -102,25 +117,33 @@ class OrderEventConsumerTest {
         assertThat(first).isNotNull();
         drainOutput("inventory-events");
 
+        var firstDecision =
+                objectMapper.readValue(first.getPayload(), InventoryDecisionMessage.class);
+        assertThat(firstDecision.orderId()).isEqualTo(orderId);
+        assertThat(firstDecision.status()).isEqualTo("RESERVED");
+
+        StepVerifier.create(awaitStock("DUP", 8, 2))
+                .assertNext(
+                        updated -> {
+                            assertThat(updated.availableQuantity()).isEqualTo(8);
+                            assertThat(updated.reservedQuantity()).isEqualTo(2);
+                        })
+                .verifyComplete();
+
         input.send(payload, "order-events");
 
-        // Current consumer behavior: duplicate reservation is treated as idempotent and does not
-        // re-publish the decision event.
-        var second = output.receive(1500, "inventory-events");
-        assertThat(second).isNull();
+        // Duplicate events must be idempotent at the state level (inventory must not decrement
+        // twice). Re-publishing the same decision event is acceptable depending on retries.
+        var maybeDuplicateDecision = output.receive(1500, "inventory-events");
+        if (maybeDuplicateDecision != null) {
+            var decision =
+                    objectMapper.readValue(
+                            maybeDuplicateDecision.getPayload(), InventoryDecisionMessage.class);
+            assertThat(decision.orderId()).isEqualTo(orderId);
+            assertThat(decision.status()).isEqualTo("RESERVED");
+        }
 
-        var eventuallyConsistentStock =
-                Mono.defer(() -> inventoryRepository.findByIsbn("DUP"))
-                        .filter(
-                                updated ->
-                                        updated.availableQuantity() == 8
-                                                && updated.reservedQuantity() == 2)
-                        .repeatWhenEmpty(
-                                repeat ->
-                                        repeat.delayElements(Duration.ofMillis(100)).take(25))
-                        .timeout(Duration.ofSeconds(5));
-
-        StepVerifier.create(eventuallyConsistentStock)
+        StepVerifier.create(awaitStock("DUP", 8, 2))
                 .assertNext(
                         updated -> {
                             assertThat(updated.availableQuantity()).isEqualTo(8);

@@ -12,9 +12,5 @@ spring:
           group: ${spring.application.name}
         packlabel-out-0:
           destination: order-dispatched
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: user
-    password: password
-    connection-timeout: 5s
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
