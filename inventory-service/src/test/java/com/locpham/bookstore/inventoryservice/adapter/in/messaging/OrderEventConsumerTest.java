@@ -11,7 +11,6 @@ import com.locpham.bookstore.inventoryservice.domain.InventoryItem;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.messaging.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Mono;
@@ -53,11 +53,7 @@ class OrderEventConsumerTest {
 
     private Mono<InventoryItem> awaitStock(String isbn, int available, int reserved) {
         // Guard each DB read so a transient stalled connection doesn't hang the whole await.
-        return Mono.defer(
-                        () ->
-                                inventoryRepository
-                                        .findByIsbn(isbn)
-                                        .timeout(Duration.ofSeconds(1)))
+        return Mono.defer(() -> inventoryRepository.findByIsbn(isbn).timeout(Duration.ofSeconds(1)))
                 .filter(
                         updated ->
                                 updated.availableQuantity() == available
