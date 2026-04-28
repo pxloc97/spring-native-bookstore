@@ -8,13 +8,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = WebEnvironment.RANDOM_PORT,
+        properties = {
+            "spring.flyway.enabled=false",
+            "spring.r2dbc.enabled=false",
+            "spring.cloud.config.enabled=false",
+            "spring.cloud.stream.bindings.reserveStock-in-0.destination=test",
+            "spring.cloud.stream.bindings.releaseStock-in-0.destination=test",
+            "spring.cloud.stream.bindings.inventoryDecision-out-0.destination=test"
+        })
 class InventoryControllerTest {
 
     @Autowired private ApplicationContext context;

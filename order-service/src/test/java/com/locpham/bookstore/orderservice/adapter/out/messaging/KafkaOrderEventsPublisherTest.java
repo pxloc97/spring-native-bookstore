@@ -27,7 +27,7 @@ class KafkaOrderEventsPublisherTest {
 
         publisher.publishOrderCreated(order).block();
 
-        var message = output.receive(1000, "orderEvents-out-0");
+        var message = output.receive(1000, "orderCreated-out-0");
         var payload = new String(message.getPayload());
 
         var created = objectMapper.readValue(payload, OrderCreatedMessage.class);
