@@ -55,6 +55,33 @@ services:
     networks:
       - polar-network
 
+  inventory-service:
+    image: "pxloc97/inventory-service:0.0.1-SNAPSHOT"
+    container_name: "inventory-service"
+    ports:
+      - 8005:8005
+      - 9005:9003
+    environment:
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8005
+      - BPL_JAVA_NMT_ENABLED=false
+      - BPL_JVM_THREAD_COUNT=50
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=inventory-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
+      - SPRING_CLOUD_CONFIG_URI=http://user:password@config-service:8888
+      - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres-inventory:5432/polardb_inventory
+      - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres-inventory:5432/polardb_inventory
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=polar-kafka:19092
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 127.0.0.1:24224
+        tag: "inventory-service"
+    networks:
+      - polar-network
+
   dispatcher-service:
     image: "pxloc97/dispatcher-service:0.0.1-SNAPSHOT"
     container_name: "dispatcher-service"

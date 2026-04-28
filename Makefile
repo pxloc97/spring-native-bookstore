@@ -1,12 +1,13 @@
 SHELL := /bin/bash
 
-SERVICES := config catalog order dispatcher edge
+SERVICES := config catalog order inventory dispatcher edge
 
 MINIKUBE_PROFILE ?= polar
 KUBE_CONTEXT ?= $(MINIKUBE_PROFILE)
 K8S_PLATFORM_FILES := \
 	polar-deployment/kubernetes/local/postgresql.yml \
 	polar-deployment/kubernetes/local/postgresql-order.yml \
+	polar-deployment/kubernetes/local/postgresql-inventory.yml \
 	polar-deployment/kubernetes/local/keycloak.yml \
 	polar-deployment/kubernetes/local/redis.yml \
 	polar-deployment/kubernetes/local/kafka.yml \
@@ -41,28 +42,28 @@ spotless: $(addprefix spotless-,$(SERVICES)) ## Run Spotless check for all servi
 
 spotless-apply: $(addprefix spotless-apply-,$(SERVICES)) ## Apply Spotless formatting for all services
 
-build-%: ## Build one service (config|catalog|order|dispatcher|edge)
+build-%: ## Build one service (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew build
 
-test-%: ## Test one service (config|catalog|order|dispatcher|edge)
+test-%: ## Test one service (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew test
 
-clean-%: ## Clean one service (config|catalog|order|dispatcher|edge)
+clean-%: ## Clean one service (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew clean
 
-run-%: ## Run one service locally (config|catalog|order|dispatcher|edge)
+run-%: ## Run one service locally (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew bootRun
 
-image-publish-%: ## Build and publish OCI image for one service (config|catalog|order|dispatcher|edge)
+image-publish-%: ## Build and publish OCI image for one service (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew bootBuildImage --publishImage
 
-image-%: ## Build OCI image for one service (config|catalog|order|dispatcher|edge)
+image-%: ## Build OCI image for one service (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew bootBuildImage
 
-spotless-apply-%: ## Apply Spotless formatting for one service (config|catalog|order|dispatcher|edge)
+spotless-apply-%: ## Apply Spotless formatting for one service (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew spotlessApply
 
-spotless-%: ## Run Spotless check for one service (config|catalog|order|dispatcher|edge)
+spotless-%: ## Run Spotless check for one service (config|catalog|order|inventory|dispatcher|edge)
 	cd $*-service && ./gradlew spotlessCheck
 
 cluster-create: ## Create minikube cluster and deploy platform dependencies

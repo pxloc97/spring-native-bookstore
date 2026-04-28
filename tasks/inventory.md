@@ -219,6 +219,23 @@ OrderEventConsumer receives order.cancelled
       4. saveAll updated items + reservations
 ```
 
+---
+
+## Scaffold Checklist (Repo-Level)
+
+To keep the repo deterministic and aligned with other services (`order-service` is the reference):
+
+- Root `Makefile`: add `inventory` to `SERVICES` so `make build|test|run|spotless` includes it.
+- `inventory-service/Tiltfile`: add image build + `k8s_yaml(...)` and port forward.
+- `polar-deployment/kubernetes/local/Tiltfile`: include `../../../inventory-service/Tiltfile`.
+- `skaffold.yml`: add inventory artifact and include `inventory-service/k8s/*.yml` in `manifests.rawYaml` (optional but recommended if using Skaffold).
+
+---
+
+## Order ↔ Inventory Integration
+
+See [tasks/order-inventory-integration.md](/home/dgwa/Workspaces/spring-native-bookstore/tasks/order-inventory-integration.md) for the end-to-end integration plan and the required tests.
+
 Second invocation finds no `RESERVED` records → safe no-op.
 
 ### 5.4 Idempotency for Duplicate Reserve Events

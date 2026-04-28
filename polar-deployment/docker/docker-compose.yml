@@ -56,6 +56,18 @@ services:
     networks:
       - polar-network
 
+  polar-postgres-inventory:
+    image: "postgres:13.4"
+    container_name: "polar-postgres-inventory"
+    ports:
+      - 5434:5432
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=polardb_inventory
+    networks:
+      - polar-network
+
   polar-redis:
     image: "redis:6.2"
     container_name: "polar-redis"

@@ -18,6 +18,12 @@ build:
         builder: paketobuildpacks/builder-jammy-base
         env:
           - BP_JVM_VERSION=21.*
+    - image: pxloc97/inventory-service
+      context: inventory-service
+      buildpacks:
+        builder: paketobuildpacks/builder-jammy-base
+        env:
+          - BP_JVM_VERSION=21.*
 manifests:
   rawYaml:
     - config-service/k8s/deployment.yml
@@ -28,6 +34,8 @@ manifests:
     - edge-service/k8s/ingress.yml
     - dispatcher-service/k8s/deployment.yml
     - dispatcher-service/k8s/service.yml
+    - inventory-service/k8s/deployment.yml
+    - inventory-service/k8s/service.yml
 deploy:
   kubectl: {}
 profiles:
