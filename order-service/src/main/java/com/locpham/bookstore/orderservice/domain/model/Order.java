@@ -60,14 +60,14 @@ public record Order(
         if (status != OrderStatus.PENDING) {
             throw new IllegalStateException("Order must be PENDING to accept");
         }
-        return new Order(id, book, quantity, OrderStatus.ACCEPTED, audit.update(), version);
+        return new Order(id, book, quantity, OrderStatus.ACCEPTED, audit.update(), version + 1);
     }
 
     public Order reject() {
         if (status != OrderStatus.PENDING) {
             throw new IllegalStateException("Order must be PENDING to reject");
         }
-        return new Order(id, book, quantity, OrderStatus.REJECTED, audit.update(), version);
+        return new Order(id, book, quantity, OrderStatus.REJECTED, audit.update(), version + 1);
     }
 
     public Order markDispatched() {

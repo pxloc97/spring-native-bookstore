@@ -1,0 +1,61 @@
+package com.locpham.bookstore.orderservice.application.service;
+
+import com.locpham.bookstore.orderservice.application.port.in.ProcessInventoryDecisionUseCase;
+import com.locpham.bookstore.orderservice.application.port.out.OrderCommandPort;
+import com.locpham.bookstore.orderservice.application.port.out.OrderEventPublisherPort;
+import com.locpham.bookstore.orderservice.application.port.out.OrderQueryPort;
+import com.locpham.bookstore.orderservice.domain.model.OrderStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
+
+@Service
+public class ProcessInventoryDecisionService implements ProcessInventoryDecisionUseCase {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(ProcessInventoryDecisionService.class);
+
+    private final OrderQueryPort orderQueryPort;
+    private final OrderCommandPort orderCommandPort;
+    private final OrderEventPublisherPort orderEventPublisherPort;
+
+    public ProcessInventoryDecisionService(
+            OrderQueryPort orderQueryPort,
+            OrderCommandPort orderCommandPort,
+            OrderEventPublisherPort orderEventPublisherPort) {
+        this.orderQueryPort = orderQueryPort;
+        this.orderCommandPort = orderCommandPort;
+        this.orderEventPublisherPort = orderEventPublisherPort;
+    }
+
+    @Transactional
+    @Override
+    public Mono<Void> processDecision(Long orderId, DecisionStatus status) {
+        return orderQueryPort
+                .findById(orderId)
+                .switchIfEmpty(
+                        Mono.fromRunnable(
+                                        () ->
+                                                logger.warn(
+                                                        "Inventory decision for missing order {} ignored",
+                                                        orderId))
+                                .then(Mono.empty()))
+                .flatMap(
+                        order -> {
+                            if (order.status() != OrderStatus.PENDING) {
+                                // Idempotency: if already decided, ignore duplicates.
+                                return Mono.empty();
+                            }
+
+                            return switch (status) {
+                                case RESERVED -> orderCommandPort
+                                        .save(order.accept())
+                                        .flatMap(orderEventPublisherPort::publishOrderAccepted)
+                                        .then();
+                                case REJECTED -> orderCommandPort.save(order.reject()).then();
+                            };
+                        });
+    }
+}

@@ -5,4 +5,8 @@ import reactor.core.publisher.Mono;
 
 public interface OrderEventPublisherPort {
     Mono<Void> publishOrderAccepted(Order order);
+
+    Mono<Void> publishOrderCreated(Order order);
+
+    Mono<Void> publishOrderCancelled(Long orderId);
 }

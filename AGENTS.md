@@ -174,63 +174,67 @@ Before completing any code modification task, verify:
 <claude-mem-context>
 # Memory Context
 
-# [spring-native-bookstore] recent context, 2026-04-28 3:42pm GMT+9
+# [spring-native-bookstore] recent context, 2026-04-28 5:15pm GMT+9
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (15,999t read) | 649t work | -2365% savings
+Stats: 50 obs (19,986t read) | 0t work
 
 ### Apr 28, 2026
-24 1:42p 🔵 Config Server lacks inventory-service configuration file
-25 1:43p 🔵 Order-service config shows environment-specific URLs and Config Bus pattern
-26 " 🔵 Inventory-service lacks OAuth2 resource server security configuration
-27 " 🔵 Order-service has comprehensive Testcontainers integration tests
-28 " 🔵 Order-service TestcontainersConfiguration uses Spring Boot @ServiceConnection for automatic database connection
-29 1:44p 🔵 Inventory-service persistence adapters implement jOOQ with optimistic locking and reactive patterns
-30 " 🔵 Inventory and order services use identical PersistenceConfig with R2DBC auditing enabled
-31 " 🔵 Inventory and order services use identical JooqConfig for reactive jOOQ with R2DBC integration
-32 " 🔵 OrderControllerTest demonstrates web slice testing pattern with OAuth2 security mocks
-33 1:45p 🔵 Order-service messaging tests use TestChannelBinderConfiguration for Kafka-free integration testing
-38 " 🔵 Inventory-service jOOQ generated code directory does not exist
-39 " 🔵 Inventory-service jOOQ generated code exists in src/main/generated-jooq directory
-46 " 🔴 Added pgcrypto extension migration to resolve gen_random_uuid dependency
-34 1:46p 🔵 Inventory-service messaging layer fully implemented with Kafka event publisher and message records
-35 " 🔵 Inventory-service has two Flyway migration scripts for inventory and reservation tables
-36 " 🔵 Inventory-service database schema defines inventory and reservation tables with optimistic locking and unique constraints
-37 " 🔵 Inventory-service migration uses gen_random_uuid() without pgcrypto extension creation
-40 1:48p 🔵 Inventory-service build.gradle configures jOOQ 3.19.30 code generation with Flyway migration dependency
-41 " 🔵 InventoryItem domain record implements immutable inventory management with validation
-42 1:49p 🔵 ReserveStockService implements all-or-nothing stock reservation with transactional reactive pattern
-43 " 🔵 StockAdjustmentRequest DTO defines admin stock adjustment input with validation
-44 1:50p 🔵 Polar deployment Kubernetes infrastructure exists but inventory-service K8s manifests missing
-45 " 🔵 Skaffold configuration only includes edge and dispatcher services, missing inventory/order/catalog manifests
-47 1:52p 🔴 JooqReservationRepositoryImpl fixed DataIntegrityViolationException construction in onErrorMap
-49 " 🟣 InventoryControllerTest converted from @WebFluxTest slice test to @SpringBootTest integration test
-51 " 🔵 No disabledWithoutDocker configuration found in inventory-service or order-service test configurations
-48 " 🔵 InventoryControllerTest compilation fails due to missing @WebFluxTest dependency
-50 1:53p 🔵 Inventory-service tests fail with DockerClientProviderStrategy IllegalStateException
-52 " ✅ JooqInventoryRepositoryImplTest configured with disabledWithoutDocker to skip when Docker unavailable
-53 " 🔵 Inventory-service lacks scaffold pattern and has scattered environment configuration
-54 1:56p 🔵 Examined JooqReservationRepositoryImpl implementation patterns
-55 " 🔴 Re-applied Spotless indentation fix for method chain alignment
-56 3:32p 🔴 Method chain indentation fix successfully applied
-57 " 🔴 Spotless formatting verification passed successfully
-58 " 🔴 Method chain indentation re-aligned in JooqReservationRepositoryImpl
-59 3:33p 🔴 Spotless formatting validation confirmed successful
-60 " 🔵 Inventory-service not found in deployment configuration files
-61 3:34p 🔵 Confirmed: inventory-service absent from deployment orchestration
-62 " 🔴 Spotless formatting compliance re-verified successfully
-63 " 🔵 Deployment configuration gap confirmed for inventory-service
-64 " 🔵 Final verification: inventory-service excluded from deployment pipeline
-65 " 🔵 Makefile SERVICES variable excludes inventory-service
-66 " 🔵 Config Server patterns identified from existing services
-67 3:35p 🔵 Tiltfile excludes inventory-service from local development
-68 " 🔵 Local development Tilt configuration confirmed missing inventory-service
-69 " 🔵 Service Tiltfile patterns identified from order-service and catalog-service
-70 " 🔵 Tiltfile service inclusion pattern re-verified
-71 " 🔵 Tiltfile service configuration patterns re-confirmed
-72 " 🔵 Order-service lacks inventory integration event handlers
-73 3:36p 🔵 Order-service application.yml configuration patterns identified
+132 4:14p 🔴 Fixed KafkaOrderEventsPublisherTest to exclude R2DBC auto-configuration
+133 4:15p 🔴 Successfully fixed KafkaOrderEventsPublisherTest database dependency issue
+134 " 🔴 Applied R2DBC exclusion fix to InventoryDecisionConsumerAdapterTest
+135 " 🔴 Successfully fixed InventoryDecisionConsumerAdapterTest database dependency
+136 " 🔄 Re-applied ProcessInventoryDecisionServiceTest refactoring changes
+137 4:16p 🔄 Successfully re-applied ProcessInventoryDecisionServiceTest refactoring
+138 " 🔵 Tests still failing despite R2DBC exclusion fixes being applied
+139 " 🔴 Re-applied R2DBC exclusion fix to KafkaOrderEventsPublisherTest
+140 " 🔴 Re-applied R2DBC exclusion configuration to KafkaOrderEventsPublisherTest
+152 " 🔵 Located spring-boot-autoconfigure JAR to resolve auto-configuration class import errors
+141 4:17p 🔴 Re-applied R2DBC exclusion fix to InventoryDecisionConsumerAdapterTest
+142 " 🔴 Successfully re-applied database exclusion to InventoryDecisionConsumerAdapterTest
+143 " 🔵 Tests still failing after R2DBC exclusion patches due to Gradle build cache
+144 " 🔄 Refactored KafkaOrderEventsPublisherTest to use nested TestApp configuration
+145 " 🔄 Successfully refactored KafkaOrderEventsPublisherTest with nested TestApp configuration
+146 4:18p 🔄 Re-applied nested TestApp configuration to KafkaOrderEventsPublisherTest
+147 " 🔄 Successfully re-applied type-safe TestApp configuration to KafkaOrderEventsPublisherTest
+148 " 🔄 Refactored InventoryDecisionConsumerAdapterTest with nested TestApp configuration
+149 4:19p 🔄 Successfully applied type-safe TestApp configuration to InventoryDecisionConsumerAdapterTest
+150 " 🔵 Test compilation failed due to missing auto-configuration class imports
+151 " 🔵 Located spring-boot-autoconfigure JAR in Gradle cache
+153 4:21p 🔵 Test compilation blocking due to incorrect auto-configuration class package names
+154 4:22p 🔵 Relocated spring-boot-autoconfigure JAR for auto-configuration class verification
+155 " 🔵 Auto-configuration classes not found in Spring Boot 4.0.3 JAR
+156 4:23p 🔵 R2DBC and Flyway auto-configuration classes not found in Spring Boot 4.0.3
+157 " 🔵 ConnectionFactoryOptionsInitializer not found in Spring Boot autoconfigure JAR
+158 " 🔵 ConnectionFactoryOptionsInitializer not found in Gradle cache
+159 " 🔵 Testcontainers disabledWithoutDocker Configuration Explained
+S2 Explained @Testcontainers(disabledWithoutDocker = true) purpose and completed final code formatting fixes for order-service tests (Apr 28, 4:23 PM)
+S1 Explained @Testcontainers(disabledWithoutDocker = true) annotation and continued order-inventory integration test configuration work (Apr 28, 4:23 PM)
+S3 Explained @Testcontainers(disabledWithoutDocker = true) annotation purpose and completed final code formatting fixes for order-service tests (Apr 28, 4:25 PM)
+160 4:31p 🔵 Spring Boot JDBC Auto-Configuration Classes in 4.0.3
+161 4:32p 🔴 Added JDBC DataSource Auto-Configuration Exclusions to Kafka Test
+162 4:33p 🔴 Fixed Spotless Formatting Violations in Order-Service
+163 4:39p 🔵 Docker Available and Running on Development Machine
+164 " ✅ Removed @Testcontainers disabledWithoutDocker Parameter from OrderControllerTest
+S4 Removed @Testcontainers disabledWithoutDocker parameter from all test classes, encountered Docker API version mismatch failure, investigated root cause (Apr 28, 4:39 PM)
+165 4:40p 🔴 Upgraded Testcontainers from 1.19.7 to 1.21.4 to Fix Docker API Compatibility
+167 " 🔴 Testcontainers 1.21.4 Upgrade Fixes Docker API Compatibility
+166 4:41p 🔵 Running Testcontainers Test After Upgrading to 1.21.4
+168 4:43p 🔵 InputDestination getChannelByName Returns Null for handleInventoryDecision-in-0
+169 " 🔵 Test Resources Application.yml Does Not Override Spring Cloud Function Definition
+170 4:45p 🔴 Added Spring Cloud Function Definition to Test Application Configuration
+171 " 🔴 Added Spring Cloud Stream Test Binder Configuration to Fix Test Binding
+172 4:46p 🔴 Fixed Order Version Bumping in accept() and reject() Methods
+173 " 🔴 OrderServiceApplicationTests Pass After Fixing Order Version Increment
+174 4:47p 🔵 OrderControllerTest and JooqOrderRepositoryImplTest Fail After Version Increment Fix
+175 " 🔵 Spring Assert.state() Failure at Spring Core Assert.java:80
+176 " 🔵 Spring Cloud Stream Binding Failure Due to Missing Test Binder
+177 4:48p 🔵 Root Cause: Unknown Binder Configuration test - Missing TestChannelBinderConfiguration Import
+178 " 🔴 Removed spring.cloud.stream.defaultBinder: test from Test Application Configuration
+180 " 🔵 Inventory-Service Tests Fail with NullPointerException After Testcontainers Upgrade
+179 4:49p 🔴 All Order-Service Tests Pass After Removing Invalid Test Binder Configuration
+181 4:50p 🔵 Gradle test execution blocked by network permission error
 </claude-mem-context>

@@ -27,15 +27,21 @@ spring:
         max-interval: 2000
         multiplier: 1.1
     function:
-      definition: dispatchOrder
+      definition: dispatchOrder;handleInventoryDecision
     stream:
-      source: acceptOrder
       bindings:
         dispatchOrder-in-0:
           destination: order-dispatched
           group: ${spring.application.name}
+        handleInventoryDecision-in-0:
+          destination: inventory-events
+          group: ${spring.application.name}
         acceptOrder-out-0:
           destination: order-accepted
+        orderCreated-out-0:
+          destination: order-events
+        orderCancelled-out-0:
+          destination: order-events
   r2dbc:
     url: r2dbc:postgresql://localhost:5433/polardb_order
     username: user

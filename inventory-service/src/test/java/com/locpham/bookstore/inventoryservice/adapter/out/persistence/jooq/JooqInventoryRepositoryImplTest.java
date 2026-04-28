@@ -15,7 +15,7 @@ import reactor.test.StepVerifier;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(TestcontainersConfiguration.class)
-@Testcontainers(disabledWithoutDocker = true)
+@Testcontainers
 class JooqInventoryRepositoryImplTest {
 
     @Autowired private JooqInventoryRepositoryImpl inventoryRepository;

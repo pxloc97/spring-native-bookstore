@@ -8,8 +8,10 @@ import com.locpham.bookstore.inventoryservice.adapter.in.messaging.messages.Orde
 import com.locpham.bookstore.inventoryservice.adapter.out.messaging.messages.InventoryDecisionMessage;
 import com.locpham.bookstore.inventoryservice.adapter.out.persistence.jooq.JooqInventoryRepositoryImpl;
 import com.locpham.bookstore.inventoryservice.domain.InventoryItem;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.messaging.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +24,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.support.MessageBuilder;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import({TestcontainersConfiguration.class, TestChannelBinderConfiguration.class})
-@Testcontainers(disabledWithoutDocker = true)
+@Testcontainers
 class OrderEventConsumerTest {
 
     @Autowired private InputDestination input;
@@ -38,6 +41,14 @@ class OrderEventConsumerTest {
     @BeforeEach
     void setUp() {
         this.objectMapper = new ObjectMapper();
+        drainOutput("inventory-events");
+    }
+
+    private void drainOutput(String bindingName) {
+        Message<byte[]> message;
+        do {
+            message = output.receive(0, bindingName);
+        } while (message != null);
     }
 
     @Test
@@ -53,9 +64,9 @@ class OrderEventConsumerTest {
                 MessageBuilder.withPayload(objectMapper.writeValueAsBytes(message))
                         .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                         .build(),
-                "reserveStock-in-0");
+                "order-events");
 
-        var out = output.receive(5000, "inventoryDecision-out-0");
+        var out = output.receive(5000, "inventory-events");
         assertThat(out).isNotNull();
 
         var decisionMessage =
@@ -86,18 +97,30 @@ class OrderEventConsumerTest {
                         .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                         .build();
 
-        input.send(payload, "reserveStock-in-0");
-        var first = output.receive(5000, "inventoryDecision-out-0");
+        input.send(payload, "order-events");
+        var first = output.receive(5000, "inventory-events");
         assertThat(first).isNotNull();
+        drainOutput("inventory-events");
 
-        input.send(payload, "reserveStock-in-0");
+        input.send(payload, "order-events");
 
         // Current consumer behavior: duplicate reservation is treated as idempotent and does not
         // re-publish the decision event.
-        var second = output.receive(750, "inventoryDecision-out-0");
+        var second = output.receive(1500, "inventory-events");
         assertThat(second).isNull();
 
-        StepVerifier.create(inventoryRepository.findByIsbn("DUP"))
+        var eventuallyConsistentStock =
+                Mono.defer(() -> inventoryRepository.findByIsbn("DUP"))
+                        .filter(
+                                updated ->
+                                        updated.availableQuantity() == 8
+                                                && updated.reservedQuantity() == 2)
+                        .repeatWhenEmpty(
+                                repeat ->
+                                        repeat.delayElements(Duration.ofMillis(100)).take(25))
+                        .timeout(Duration.ofSeconds(5));
+
+        StepVerifier.create(eventuallyConsistentStock)
                 .assertNext(
                         updated -> {
                             assertThat(updated.availableQuantity()).isEqualTo(8);

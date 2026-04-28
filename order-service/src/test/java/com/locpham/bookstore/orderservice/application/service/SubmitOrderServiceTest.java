@@ -39,18 +39,18 @@ public class SubmitOrderServiceTest {
         given(catalogBookPort.loadBook(isbn)).willReturn(Mono.just(book));
         given(orderCommandPort.save(any(Order.class)))
                 .willAnswer(inv -> Mono.just(inv.getArgument(0)));
-        given(eventPublisher.publishOrderAccepted(any(Order.class))).willReturn(Mono.empty());
+        given(eventPublisher.publishOrderCreated(any(Order.class))).willReturn(Mono.empty());
 
         StepVerifier.create(submitOrderService.submitOrder(command))
                 .assertNext(
                         order -> {
-                            assertThat(order.status()).isEqualTo(OrderStatus.ACCEPTED);
+                            assertThat(order.status()).isEqualTo(OrderStatus.PENDING);
                             assertThat(order.quantity()).isEqualTo(command.quantity());
                             assertThat(order.book().isbn()).isEqualTo(command.isbn());
                         })
                 .verifyComplete();
 
-        verify(eventPublisher).publishOrderAccepted(any(Order.class));
+        verify(eventPublisher).publishOrderCreated(any(Order.class));
     }
 
     @Test
@@ -71,6 +71,6 @@ public class SubmitOrderServiceTest {
                         })
                 .verifyComplete();
 
-        verify(eventPublisher, never()).publishOrderAccepted(any(Order.class));
+        verify(eventPublisher, never()).publishOrderCreated(any(Order.class));
     }
 }

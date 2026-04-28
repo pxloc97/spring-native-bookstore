@@ -5,9 +5,11 @@ import static org.springframework.security.test.web.reactive.server.SecurityMock
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.locpham.bookstore.orderservice.adapter.in.messaging.InventoryDecisionMessage;
 import com.locpham.bookstore.orderservice.adapter.in.messaging.OrderDispatchedMessage;
 import com.locpham.bookstore.orderservice.adapter.in.web.dto.OrderRequest;
 import com.locpham.bookstore.orderservice.adapter.out.messaging.OrderAcceptedMessage;
+import com.locpham.bookstore.orderservice.adapter.out.messaging.OrderCreatedMessage;
 import com.locpham.bookstore.orderservice.application.port.out.OrderQueryPort;
 import com.locpham.bookstore.orderservice.domain.model.OrderStatus;
 import java.io.IOException;
@@ -32,10 +34,12 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.test.StepVerifier;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({TestcontainersConfiguration.class, TestChannelBinderConfiguration.class})
+@Testcontainers
 class OrderServiceApplicationTests {
 
     private static MockWebServer mockWebServer;
@@ -103,14 +107,31 @@ class OrderServiceApplicationTests {
                 .expectStatus()
                 .isOk();
 
-        // Verify event published
-        var message = output.receive(5000, "acceptOrder-out-0");
-        assertThat(message).isNotNull();
+        // Verify order.created published
+        var createdMessage = output.receive(5000, "orderCreated-out-0");
+        assertThat(createdMessage).isNotNull();
 
-        // Simulate dispatcher consuming and publishing dispatched event
+        var orderCreated =
+                objectMapper.readValue(createdMessage.getPayload(), OrderCreatedMessage.class);
+        var orderId = orderCreated.orderId();
+
+        // Simulate inventory reserving stock and publishing decision
+        var inventoryPayload =
+                objectMapper.writeValueAsBytes(
+                        new InventoryDecisionMessage(orderId, "RESERVED", null));
+        input.send(
+                MessageBuilder.withPayload(inventoryPayload)
+                        .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                        .build(),
+                "handleInventoryDecision-in-0");
+
+        // Verify order.accepted published after inventory RESERVED
+        var acceptedMessage = output.receive(5000, "acceptOrder-out-0");
+        assertThat(acceptedMessage).isNotNull();
+
         var orderAcceptedMessage =
-                objectMapper.readValue(message.getPayload(), OrderAcceptedMessage.class);
-        var orderId = orderAcceptedMessage.orderId();
+                objectMapper.readValue(acceptedMessage.getPayload(), OrderAcceptedMessage.class);
+        assertThat(orderAcceptedMessage.orderId()).isEqualTo(orderId);
 
         var jsonPayload = objectMapper.writeValueAsBytes(new OrderDispatchedMessage(orderId));
         input.send(

@@ -13,6 +13,7 @@ class OrderTest {
         var acceptedOrder = order.accept();
 
         assertEquals(OrderStatus.ACCEPTED, acceptedOrder.status());
+        assertEquals(order.version() + 1, acceptedOrder.version());
     }
 
     @Test
@@ -31,6 +32,7 @@ class OrderTest {
         var rejectedOrder = order.reject();
 
         assertEquals(OrderStatus.REJECTED, rejectedOrder.status());
+        assertEquals(order.version() + 1, rejectedOrder.version());
     }
 
     @Test
