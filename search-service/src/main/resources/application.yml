@@ -1,0 +1,20 @@
+server:
+  port: 9005
+
+spring:
+  elasticsearch:
+    uris: http://localhost:9200
+  cloud:
+    stream:
+      bindings:
+        handleBookCreated-in-0:
+          destination: book.created
+          group: search-service
+        handleBookUpdated-in-0:
+          destination: book.updated
+          group: search-service
+        handleBookDeleted-in-0:
+          destination: book.deleted
+          group: search-service
+      function:
+        definition: handleBookCreated;handleBookUpdated;handleBookDeleted
