@@ -1,8 +1,10 @@
-package com.locpham.bookstore.catalogservice.web;
+package com.locpham.bookstore.catalogservice.adapter.in;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.locpham.bookstore.catalogservice.domain.Book;
+import com.locpham.bookstore.catalogservice.adapter.in.dto.BookRequest;
+import com.locpham.bookstore.catalogservice.adapter.in.dto.BookResponse;
+import com.locpham.bookstore.catalogservice.domain.book.Book;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
@@ -10,12 +12,14 @@ import org.springframework.boot.test.json.JacksonTester;
 
 @JsonTest
 class BookJsonTests {
-    @Autowired private JacksonTester<Book> json;
+    @Autowired private JacksonTester<BookRequest> bookRequestJson;
+    @Autowired private JacksonTester<BookResponse> bookResponseJson;
 
     @Test
-    void testSerialize() throws Exception {
+    void testSerializeBookResponse() throws Exception {
         var book = Book.build("1234567890", "Title", "Author", 9.90, "Polarsophia");
-        var jsonContent = json.write(book);
+        var response = BookResponse.fromDomain(book);
+        var jsonContent = bookResponseJson.write(response);
         assertThat(jsonContent).extractingJsonPathStringValue("@.isbn").isEqualTo(book.isbn());
         assertThat(jsonContent).extractingJsonPathStringValue("@.title").isEqualTo(book.title());
         assertThat(jsonContent).extractingJsonPathStringValue("@.author").isEqualTo(book.author());
@@ -26,7 +30,7 @@ class BookJsonTests {
     }
 
     @Test
-    void testDeserialize() throws Exception {
+    void testDeserializeBookRequest() throws Exception {
         var content =
                 """
             {
@@ -37,8 +41,11 @@ class BookJsonTests {
                 "publisher": "Polarsophia"
             }
             """;
-        assertThat(json.parse(content))
-                .usingRecursiveComparison()
-                .isEqualTo(Book.build("1234567890", "Title", "Author", 9.90, "Polarsophia"));
+        var request = bookRequestJson.parseObject(content);
+        assertThat(request.isbn()).isEqualTo("1234567890");
+        assertThat(request.title()).isEqualTo("Title");
+        assertThat(request.author()).isEqualTo("Author");
+        assertThat(request.price()).isEqualTo(9.90);
+        assertThat(request.publisher()).isEqualTo("Polarsophia");
     }
 }

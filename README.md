@@ -157,12 +157,12 @@ curl http://edge.bookstore.local/books
 
 - `GET /` - returns configured greeting
 - `GET /books` - list all books
-- `GET /books/{isbn}` - get one book by ISBN
-- `POST /books` - create a book (returns `201`)
-- `PUT /books/{isbn}` - update a book
-- `DELETE /books/{isbn}` - delete a book (returns `204`)
+- `GET /books/{isbn}` - get one bookOld by ISBN
+- `POST /books` - create a bookOld (returns `201`)
+- `PUT /books/{isbn}` - update a bookOld
+- `DELETE /books/{isbn}` - delete a bookOld (returns `204`)
 
-Create a book:
+Create a bookOld:
 
 ```bash
 curl -X POST http://localhost:9001/books \

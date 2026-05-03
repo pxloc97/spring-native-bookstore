@@ -1,7 +1,7 @@
-package com.locpham.bookstore.catalogservice.web;
+package com.locpham.bookstore.catalogservice.adapter.in;
 
-import com.locpham.bookstore.catalogservice.domain.BookAlreadyException;
-import com.locpham.bookstore.catalogservice.domain.BookNotFoundException;
+import com.locpham.bookstore.catalogservice.domain.book.exception.BookAlreadyExistsException;
+import com.locpham.bookstore.catalogservice.domain.book.exception.BookNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -20,9 +20,9 @@ public class BookControllerAdvice {
         return ex.getMessage();
     }
 
-    @ExceptionHandler(BookAlreadyException.class)
+    @ExceptionHandler(BookAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    String bookAlreadyHandler(BookAlreadyException ex) {
+    String bookAlreadyHandler(BookAlreadyExistsException ex) {
         return ex.getMessage();
     }
 

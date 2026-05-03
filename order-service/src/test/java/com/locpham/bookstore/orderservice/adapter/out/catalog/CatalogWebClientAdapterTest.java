@@ -42,10 +42,10 @@ class CatalogWebClientAdapterTest {
 
         mockWebServer.enqueue(mockResponse);
 
-        var book = catalogWebClientAdapter.loadBook("1234567890").block();
-        assertEquals("1234567890", book.isbn());
-        assertEquals("Book", book.title());
-        assertEquals(9.99, book.price());
+        var bookOld = catalogWebClientAdapter.loadBook("1234567890").block();
+        assertEquals("1234567890", bookOld.isbn());
+        assertEquals("Book", bookOld.title());
+        assertEquals(9.99, bookOld.price());
     }
 
     @Test
@@ -57,8 +57,8 @@ class CatalogWebClientAdapterTest {
 
         mockWebServer.enqueue(mockResponse);
 
-        var book = catalogWebClientAdapter.loadBook("1234567890").block();
-        assertNull(book);
+        var bookOld = catalogWebClientAdapter.loadBook("1234567890").block();
+        assertNull(bookOld);
     }
 
     @Test
@@ -71,7 +71,7 @@ class CatalogWebClientAdapterTest {
 
         mockWebServer.enqueue(mockResponse);
 
-        var book = catalogWebClientAdapter.loadBook("1234567890").block();
-        assertNull(book);
+        var bookOld = catalogWebClientAdapter.loadBook("1234567890").block();
+        assertNull(bookOld);
     }
 }

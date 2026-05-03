@@ -4,13 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.locpham.bookstore.inventoryservice.TestcontainersConfiguration;
+import com.locpham.bookstore.inventoryservice.adapter.in.messaging.messages.OrderCancelledMessage;
 import com.locpham.bookstore.inventoryservice.adapter.in.messaging.messages.OrderCreatedMessage;
 import com.locpham.bookstore.inventoryservice.adapter.out.messaging.messages.InventoryDecisionMessage;
 import com.locpham.bookstore.inventoryservice.adapter.out.persistence.jooq.JooqInventoryRepositoryImpl;
+import com.locpham.bookstore.inventoryservice.adapter.out.persistence.jooq.JooqReservationRepositoryImpl;
 import com.locpham.bookstore.inventoryservice.domain.InventoryItem;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+
+import com.locpham.bookstore.inventoryservice.domain.Reservation;
+import com.locpham.bookstore.inventoryservice.domain.ReservationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +37,14 @@ import reactor.test.StepVerifier;
 @Testcontainers
 class OrderEventConsumerTest {
 
-    @Autowired private InputDestination input;
-    @Autowired private OutputDestination output;
-    @Autowired private JooqInventoryRepositoryImpl inventoryRepository;
+    @Autowired
+    private InputDestination input;
+    @Autowired
+    private OutputDestination output;
+    @Autowired
+    private JooqInventoryRepositoryImpl inventoryRepository;
+    @Autowired
+    private JooqReservationRepositoryImpl reservationRepository;
 
     private ObjectMapper objectMapper;
 
@@ -42,6 +52,7 @@ class OrderEventConsumerTest {
     void setUp() {
         this.objectMapper = new ObjectMapper();
         drainOutput("inventory-events");
+        drainOutput("order-events");
     }
 
     private void drainOutput(String bindingName) {
@@ -144,6 +155,52 @@ class OrderEventConsumerTest {
                         updated -> {
                             assertThat(updated.availableQuantity()).isEqualTo(8);
                             assertThat(updated.reservedQuantity()).isEqualTo(2);
+                        })
+                .verifyComplete();
+    }
+
+    @Test
+    void orderCancelled_shouldReleaseStockAndUpdateReservationStatus() throws Exception {
+        inventoryRepository.save(InventoryItem.create("ABC", 10)).block();
+
+        var orderId = UUID.randomUUID();
+
+        // Act: Send order-created event
+        var createMessage = new OrderCreatedMessage(
+                orderId, List.of(new OrderCreatedMessage.OrderItem("ABC", 2)));
+        input.send(MessageBuilder.withPayload(objectMapper.writeValueAsBytes(createMessage))
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build(), "order-events");
+
+        // Verify stock đã được reserve
+        StepVerifier.create(awaitStock("ABC", 8, 2))
+                .assertNext(updated -> {
+                    assertThat(updated.availableQuantity()).isEqualTo(8);
+                    assertThat(updated.reservedQuantity()).isEqualTo(2);
+                })
+                .verifyComplete();
+
+        drainOutput("inventory-events");  // clean decision
+
+        // Act: Send order-cancelled event
+        var cancelMessage = new OrderCancelledMessage(orderId);
+        input.send(MessageBuilder.withPayload(objectMapper.writeValueAsBytes(cancelMessage))
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build(), "order-events");
+
+        // Assert wait for invetory release
+        StepVerifier.create(awaitStock("ABC", 10, 0))
+                .assertNext( updated -> {
+                    assertThat(updated.availableQuantity()).isEqualTo(10);
+                    assertThat(updated.reservedQuantity()).isEqualTo(0);
+                })
+                .verifyComplete();
+
+        // Assert is released
+        StepVerifier.create(reservationRepository.findByOrderId(orderId))
+                .assertNext(
+                        r -> {
+                            assertThat(r.status()).isEqualTo(ReservationStatus.RELEASED);
                         })
                 .verifyComplete();
     }

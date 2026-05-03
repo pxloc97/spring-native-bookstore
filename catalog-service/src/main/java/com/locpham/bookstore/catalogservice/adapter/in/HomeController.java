@@ -1,4 +1,4 @@
-package com.locpham.bookstore.catalogservice.web;
+package com.locpham.bookstore.catalogservice.adapter.in;
 
 import com.locpham.bookstore.catalogservice.config.PolarProperties;
 import org.springframework.web.bind.annotation.GetMapping;

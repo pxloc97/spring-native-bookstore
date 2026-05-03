@@ -1,17 +1,11 @@
-package com.locpham.bookstore.catalogservice.domain;
+package com.locpham.bookstore.catalogservice.adapter.in.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import java.time.Instant;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.annotation.Version;
 
-public record Book(
-        @Id Long id,
+public record BookRequest(
         @NotBlank(message = "The book ISBN must be defined.")
                 @Pattern(
                         regexp = "^([0-9]{10}|[0-9]{13})$",
@@ -22,13 +16,10 @@ public record Book(
         @NotNull(message = "The book price must be defined.")
                 @Positive(message = "The book price must be greater than zero.")
                 Double price,
-        String publisher,
-        @CreatedDate Instant createdDate,
-        @LastModifiedDate Instant lastModifiedDate,
-        @Version Integer version) {
+        String publisher) {
 
-    public static Book build(
-            String isbn, String title, String author, Double price, String publisher) {
-        return new Book(null, isbn, title, author, price, publisher, null, null, null);
+    public com.locpham.bookstore.catalogservice.domain.book.Book toDomain() {
+        return com.locpham.bookstore.catalogservice.domain.book.Book.build(
+                isbn, title, author, price, publisher);
     }
 }

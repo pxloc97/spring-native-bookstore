@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.math.BigInteger;
+
 @Configuration
 public class CatalogClientConfig {
 
@@ -15,4 +17,6 @@ public class CatalogClientConfig {
             @Value("${polar.catalog-service-url}") String catalogServiceUrl) {
         return new CatalogWebClientAdapter(webClientBuilder, catalogServiceUrl);
     }
+
+    BigInteger
 }

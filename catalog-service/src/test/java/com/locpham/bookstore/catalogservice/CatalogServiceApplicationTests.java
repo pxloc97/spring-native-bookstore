@@ -3,7 +3,8 @@ package com.locpham.bookstore.catalogservice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
-import com.locpham.bookstore.catalogservice.domain.Book;
+import com.locpham.bookstore.catalogservice.adapter.in.dto.BookRequest;
+import com.locpham.bookstore.catalogservice.adapter.in.dto.BookResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +24,7 @@ class CatalogServiceApplicationTests {
 
     @Test
     void whenPostRequestToBookToCreate() {
-        var expectingBook = Book.build("1234567899", "Title", "Author", 9.90, "Polarsophia");
+        var request = new BookRequest("1234567899", "Title", "Author", 9.90, "Polarsophia");
         given(jwtDecoder.decode("token"))
                 .willReturn(
                         Jwt.withTokenValue("token")
@@ -36,19 +37,19 @@ class CatalogServiceApplicationTests {
                 .post()
                 .uri("/books")
                 .headers(headers -> headers.setBearerAuth("token"))
-                .bodyValue(expectingBook)
+                .bodyValue(request)
                 .exchange()
                 .expectStatus()
                 .isCreated()
-                .expectBody(Book.class)
+                .expectBody(BookResponse.class)
                 .value(
                         actualBook -> {
                             assertThat(actualBook).isNotNull();
-                            assertThat(actualBook.isbn()).isEqualTo(expectingBook.isbn());
-                            assertThat(actualBook.title()).isEqualTo(expectingBook.title());
-                            assertThat(actualBook.author()).isEqualTo(expectingBook.author());
-                            assertThat(actualBook.price()).isEqualTo(expectingBook.price());
-                            assertThat(actualBook.publisher()).isEqualTo(expectingBook.publisher());
+                            assertThat(actualBook.isbn()).isEqualTo(request.isbn());
+                            assertThat(actualBook.title()).isEqualTo(request.title());
+                            assertThat(actualBook.author()).isEqualTo(request.author());
+                            assertThat(actualBook.price()).isEqualTo(request.price());
+                            assertThat(actualBook.publisher()).isEqualTo(request.publisher());
                         });
     }
 

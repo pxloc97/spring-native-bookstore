@@ -1,4 +1,4 @@
-package com.locpham.bookstore.catalogservice.web;
+package com.locpham.bookstore.catalogservice.adapter.in;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -7,9 +7,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.locpham.bookstore.catalogservice.domain.Book;
-import com.locpham.bookstore.catalogservice.domain.BookNotFoundException;
-import com.locpham.bookstore.catalogservice.domain.BookService;
+import com.locpham.bookstore.catalogservice.adapter.in.dto.BookRequest;
+import com.locpham.bookstore.catalogservice.application.port.in.AddBookUseCase;
+import com.locpham.bookstore.catalogservice.application.port.in.EditBookUseCase;
+import com.locpham.bookstore.catalogservice.application.port.in.ViewBookDetailUseCase;
+import com.locpham.bookstore.catalogservice.application.port.in.ViewListBookUseCase;
+import com.locpham.bookstore.catalogservice.domain.book.Book;
+import com.locpham.bookstore.catalogservice.domain.book.exception.BookNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +32,10 @@ public class BookControllerMvcTests {
 
     private MockMvc mockMvc;
 
-    @MockitoBean private BookService bookService;
+    @MockitoBean private ViewBookDetailUseCase viewBookDetailUseCase;
+    @MockitoBean private ViewListBookUseCase viewListBookUseCase;
+    @MockitoBean private AddBookUseCase addBookUseCase;
+    @MockitoBean private EditBookUseCase editBookUseCase;
 
     @BeforeEach
     void setUp() {
@@ -41,7 +48,8 @@ public class BookControllerMvcTests {
     @Test
     void whenGetBookNotFoundThenShouldReturn404() throws Exception {
         String isbn = "1234567890";
-        given(bookService.viewBookDetail(isbn)).willThrow(new BookNotFoundException(isbn));
+        given(viewBookDetailUseCase.viewBookDetail(isbn))
+                .willThrow(new BookNotFoundException(isbn));
         mockMvc.perform(get("/books/" + isbn)).andExpect(status().isNotFound());
     }
 
@@ -75,11 +83,12 @@ public class BookControllerMvcTests {
     @Test
     void whenCreateBookWithEmployeeRoleThenShouldReturn201() throws Exception {
         var book = Book.build("1234567890", "Title", "Author", 10.0, "Polarsophia");
+        var request = new BookRequest("1234567890", "Title", "Author", 10.0, "Polarsophia");
         var payload =
                 """
                 {"isbn":"1234567890","title":"Title","author":"Author","price":10.0,"publisher":"Polarsophia"}
                 """;
-        given(bookService.addBookToCatalog(book)).willReturn(book);
+        given(addBookUseCase.addBookToCatalog(book)).willReturn(book);
 
         mockMvc.perform(
                         post("/books")
